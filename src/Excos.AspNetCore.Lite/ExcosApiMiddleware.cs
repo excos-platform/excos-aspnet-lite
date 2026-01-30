@@ -5,7 +5,7 @@ namespace Excos.AspNetCore.Lite;
 /// <summary>
 /// Middleware for handling API requests in the Excos plugin.
 /// </summary>
-public class ExcosApiMiddleware
+internal class ExcosApiMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;

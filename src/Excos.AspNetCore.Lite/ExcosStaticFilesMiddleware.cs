@@ -7,7 +7,7 @@ namespace Excos.AspNetCore.Lite;
 /// <summary>
 /// Middleware for serving static files for the Excos SPA.
 /// </summary>
-public class ExcosStaticFilesMiddleware
+internal class ExcosStaticFilesMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;
