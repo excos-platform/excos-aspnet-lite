@@ -1,17 +1,19 @@
 # Excos.AspNetCore.Lite
 
-A lightweight plugin system for ASP.NET Core applications that provides both API middleware and Single Page Application (SPA) hosting capabilities, similar to Hangfire or Swagger UI.
+A lightweight plugin system for ASP.NET Core applications that provides both API endpoints and Single Page Application (SPA) hosting capabilities, similar to Hangfire or Swagger UI.
 
 ![Excos Plugin UI](https://github.com/user-attachments/assets/2bc15c5d-776e-434b-896b-8b4af7e8ef49)
 
 ## Features
 
 - **Embedded Static File Serving**: Serve SPA assets directly from embedded assembly resources
-- **Extensible API Middleware**: Register custom API endpoints through dependency injection
+- **Native Endpoint Routing**: API endpoints use ASP.NET Core's native endpoint routing for optimal performance
+- **Extensible API**: Register custom API endpoints through dependency injection
 - **Configurable Route Prefix**: Mount the plugin at any route in your application
 - **SPA Routing Support**: Fallback to index.html for client-side routing
 - **Easy Integration**: Simple extension methods for ASP.NET Core applications
 - **Comprehensive Testing**: xUnit test suite with in-memory WebApplicationFactory testing
+- **Internal Implementation**: All middleware and implementations are internal to prevent API surface pollution
 - **.NET 10**: Built on the latest .NET framework
 
 ## Project Structure
@@ -41,7 +43,7 @@ builder.Services.AddExcos(options =>
 
 var app = builder.Build();
 
-// Register the Excos plugin middleware
+// Register the Excos plugin middleware and map API endpoints
 app.UseExcos();
 
 app.Run();
@@ -66,15 +68,17 @@ Once registered, the plugin provides:
 
 ## Architecture
 
-### Middleware Components
+### Components
 
-1. **ExcosStaticFilesMiddleware**: Serves static files from embedded resources
+1. **ExcosStaticFilesMiddleware** (internal): Serves static files from embedded resources
    - Handles requests for HTML, CSS, JavaScript, and other static assets
    - Implements SPA routing fallback to index.html
-   - Uses singleton `EmbeddedFileProvider` for optimal performance
+   - Uses wrapped singleton services to prevent DI container pollution
    
-2. **ExcosApiMiddleware**: Processes API requests
+2. **Native Endpoint Routing**: API endpoints use ASP.NET Core's MapGroup
    - Routes API calls to registered `IApiEndpoint` implementations
+   - Better performance than custom middleware
+   - Follows ASP.NET Core conventions
    - Returns JSON responses
    - Extensible via dependency injection
 
