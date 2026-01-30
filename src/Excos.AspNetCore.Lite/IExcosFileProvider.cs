@@ -5,7 +5,7 @@ namespace Excos.AspNetCore.Lite;
 /// <summary>
 /// Internal interface for Excos file provider to prevent service leakage.
 /// </summary>
-public interface IExcosFileProvider
+internal interface IExcosFileProvider
 {
     /// <summary>
     /// Gets the underlying file provider.

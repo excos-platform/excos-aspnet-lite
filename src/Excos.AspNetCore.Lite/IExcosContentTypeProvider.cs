@@ -5,7 +5,7 @@ namespace Excos.AspNetCore.Lite;
 /// <summary>
 /// Internal interface for Excos content type provider to prevent service leakage.
 /// </summary>
-public interface IExcosContentTypeProvider
+internal interface IExcosContentTypeProvider
 {
     /// <summary>
     /// Tries to get the content type for a file path.
