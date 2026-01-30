@@ -7,8 +7,9 @@ A lightweight plugin system for ASP.NET Core applications that provides both API
 ## Features
 
 - **Embedded Static File Serving**: Serve SPA assets directly from embedded assembly resources
-- **Native Endpoint Routing**: Uses ASP.NET Core's native MapGroup and MapGet for optimal performance
-- **Minimal Configuration**: Only the mount path is configurable
+- **Native Endpoint Routing**: Uses ASP.NET Core's native MapGroup for optimal performance
+- **Host Control**: Returns RouteGroupBuilder allowing host to apply authorization and other policies
+- **Extensible**: Add custom endpoints to the plugin's API group
 - **SPA Routing Support**: Fallback to index.html for client-side routing
 - **Easy Integration**: Single extension method call
 - **Comprehensive Testing**: xUnit test suite with in-memory WebApplicationFactory testing
@@ -18,7 +19,7 @@ A lightweight plugin system for ASP.NET Core applications that provides both API
 ## Project Structure
 
 - **Excos.AspNetCore.Lite**: Main library containing the plugin infrastructure
-- **Excos.AspNetCore.Lite.TestServer**: Demo server showing plugin integration
+- **Excos.AspNetCore.Lite.TestServer**: Demo server showing plugin integration with authentication
 - **Excos.AspNetCore.Lite.Tests**: xUnit test suite with 8 passing tests
 
 ## Getting Started
@@ -42,10 +43,48 @@ builder.Services.AddExcos(options =>
 
 var app = builder.Build();
 
-// Register the Excos plugin - automatically maps static files and API endpoints
-app.UseExcos();
+// Map the Excos plugin - returns API route group for customization
+var excosApi = app.MapExcos();
 
 app.Run();
+```
+
+### Applying Authorization
+
+The `MapExcos` method returns a `RouteGroupBuilder`, allowing you to apply authorization or other policies:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddExcos(options => options.PathPrefix = "/excos");
+builder.Services.AddAuthentication(...).AddScheme(...);
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map plugin and apply authorization to all API endpoints
+var excosApi = app.MapExcos();
+excosApi.RequireAuthorization();
+
+app.Run();
+```
+
+### Adding Custom Endpoints
+
+You can add custom endpoints to the plugin's API group:
+
+```csharp
+var excosApi = app.MapExcos();
+
+// Add custom endpoint
+excosApi.MapGet("/custom", () => Results.Json(new { message = "Custom data" }));
+
+// Add authenticated endpoint
+excosApi.MapGet("/secure", () => Results.Json(new { data = "secret" }))
+    .RequireAuthorization();
 ```
 
 ### Configuration Options
@@ -61,7 +100,9 @@ Note: API route (`/api`) and default document (`index.html`) are hardcoded const
 Once registered, the plugin provides:
 
 - **SPA Interface**: `http://localhost:5202/excos/` (or your configured port)
-- **API Endpoints**: `http://localhost:5202/excos/api/status`
+- **API Endpoints**: 
+  - `http://localhost:5202/excos/api/status` (built-in)
+  - Any custom endpoints you add to the returned RouteGroupBuilder
 
 ![API Status Response](https://github.com/user-attachments/assets/c23d6ba7-10d8-4aaf-989c-1bfc9950c348)
 
