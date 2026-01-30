@@ -33,27 +33,32 @@ public static class ExcosExtensions
     }
 
     /// <summary>
-    /// Adds Excos static files middleware and maps API endpoints.
+    /// Maps Excos plugin endpoints including static files and API.
     /// </summary>
-    /// <param name="app">The application builder with endpoint routing.</param>
-    /// <returns>The application builder for chaining.</returns>
+    /// <param name="endpoints">The endpoint route builder.</param>
+    /// <param name="pathPrefix">The path prefix where the plugin will be mounted (e.g., "/excos"). If null, uses the configured PathPrefix from ExcosOptions.</param>
+    /// <returns>A route group builder for the API endpoints, allowing the host to apply authorization or other policies.</returns>
     /// <remarks>
-    /// Ensure AddExcos is called during service configuration before calling this method.
+    /// This method adds static file middleware and returns a RouteGroupBuilder for the API endpoints.
+    /// The returned builder allows the host to apply policies like RequireAuthorization() or add custom endpoints.
     /// </remarks>
-    public static IApplicationBuilder UseExcos(this IApplicationBuilder app)
+    public static RouteGroupBuilder MapExcos(this IEndpointRouteBuilder endpoints, string? pathPrefix = null)
     {
-        var options = app.ApplicationServices.GetRequiredService<ExcosOptions>();
+        var options = endpoints.ServiceProvider.GetRequiredService<ExcosOptions>();
+        var prefix = pathPrefix ?? options.PathPrefix;
 
-        // Add static files middleware
-        app.UseMiddleware<ExcosStaticFilesMiddleware>();
-
-        // Map API endpoints if endpoint routing is available
-        if (app is IEndpointRouteBuilder endpointRouteBuilder)
+        // Add static files middleware if this is IApplicationBuilder
+        if (endpoints is IApplicationBuilder app)
         {
-            var apiGroup = endpointRouteBuilder.MapGroup($"{options.PathPrefix}{ExcosConstants.ApiRoutePrefix}");
-            apiGroup.MapGet("/status", () => Results.Json(new { status = "running", version = "1.0.0" }));
+            app.UseMiddleware<ExcosStaticFilesMiddleware>();
         }
 
-        return app;
+        // Create and return the API route group
+        var apiGroup = endpoints.MapGroup($"{prefix}{ExcosConstants.ApiRoutePrefix}");
+
+        // Map default status endpoint
+        apiGroup.MapGet("/status", () => Results.Json(new { status = "running", version = "1.0.0" }));
+
+        return apiGroup;
     }
 }

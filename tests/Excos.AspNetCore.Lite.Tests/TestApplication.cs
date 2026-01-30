@@ -25,8 +25,8 @@ public class TestWebApplication
 
         var app = builder.Build();
 
-        // Register the Excos plugin - it will map the status endpoint automatically
-        app.UseExcos();
+        // Map the Excos plugin
+        var api = app.MapExcos();
 
         return app;
     }
