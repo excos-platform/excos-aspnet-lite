@@ -7,20 +7,19 @@ A lightweight plugin system for ASP.NET Core applications that provides both API
 ## Features
 
 - **Embedded Static File Serving**: Serve SPA assets directly from embedded assembly resources
-- **Native Endpoint Routing**: API endpoints use ASP.NET Core's native endpoint routing for optimal performance
-- **Extensible API**: Register custom API endpoints through dependency injection
-- **Configurable Route Prefix**: Mount the plugin at any route in your application
+- **Native Endpoint Routing**: Uses ASP.NET Core's native MapGroup and MapGet for optimal performance
+- **Minimal Configuration**: Only the mount path is configurable
 - **SPA Routing Support**: Fallback to index.html for client-side routing
-- **Easy Integration**: Simple extension methods for ASP.NET Core applications
+- **Easy Integration**: Single extension method call
 - **Comprehensive Testing**: xUnit test suite with in-memory WebApplicationFactory testing
-- **Internal Implementation**: All middleware and implementations are internal to prevent API surface pollution
+- **Clean API Surface**: All implementations are internal
 - **.NET 10**: Built on the latest .NET framework
 
 ## Project Structure
 
 - **Excos.AspNetCore.Lite**: Main library containing the plugin infrastructure
 - **Excos.AspNetCore.Lite.TestServer**: Demo server showing plugin integration
-- **Excos.AspNetCore.Lite.Tests**: xUnit test suite with 9 passing tests
+- **Excos.AspNetCore.Lite.Tests**: xUnit test suite with 8 passing tests
 
 ## Getting Started
 
@@ -43,7 +42,7 @@ builder.Services.AddExcos(options =>
 
 var app = builder.Build();
 
-// Register the Excos plugin middleware and map API endpoints
+// Register the Excos plugin - automatically maps static files and API endpoints
 app.UseExcos();
 
 app.Run();
@@ -51,11 +50,11 @@ app.Run();
 
 ### Configuration Options
 
-The `ExcosOptions` class provides the following configuration:
+The `ExcosOptions` class provides minimal configuration:
 
 - **PathPrefix**: The path where the plugin will be hosted (default: `/excos`)
 
-Note: API route (`/api`) and default document (`index.html`) are hardcoded for consistency with the embedded SPA.
+Note: API route (`/api`) and default document (`index.html`) are hardcoded constants.
 
 ### Accessing the Plugin
 
@@ -75,24 +74,10 @@ Once registered, the plugin provides:
    - Implements SPA routing fallback to index.html
    - Uses wrapped singleton services to prevent DI container pollution
    
-2. **Native Endpoint Routing**: API endpoints use ASP.NET Core's MapGroup
-   - Routes API calls to registered `IApiEndpoint` implementations
-   - Better performance than custom middleware
-   - Follows ASP.NET Core conventions
-   - Returns JSON responses
-   - Extensible via dependency injection
-
-### API Endpoint Extensibility
-
-The plugin uses the `IApiEndpoint` interface to allow custom API endpoints:
-
-```csharp
-public interface IApiEndpoint
-{
-    string Route { get; }  // e.g., "/status"
-    Task HandleAsync(HttpContext context);
-}
-```
+2. **Direct Endpoint Mapping**: Status endpoint mapped directly using native routing
+   - Uses ASP.NET Core's `MapGet` with `Results.Json()`
+   - No custom abstraction layer - just native framework features
+   - Optimal performance
 
 ### Static Assets
 
@@ -101,40 +86,8 @@ Static assets are embedded in the assembly and served from the `wwwroot` directo
 - `styles.css`: Styling
 - `app.js`: Client-side JavaScript
 
-## Extending the Plugin
-
-### Adding Custom API Endpoints
-
-Create a class that implements `IApiEndpoint` and register it with dependency injection:
-
-```csharp
-using Excos.AspNetCore.Lite;
-using Microsoft.AspNetCore.Http;
-
-public class CustomEndpoint : IApiEndpoint
-{
-    public string Route => "/custom";
-
-    public async Task HandleAsync(HttpContext context)
-    {
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync("{\"message\":\"Custom endpoint\"}");
-    }
-}
-
-// In your Program.cs or Startup.cs:
-builder.Services.AddExcos(options =>
-{
-    options.PathPrefix = "/excos";
-});
-
-// Register your custom endpoint
-builder.Services.AddSingleton<IApiEndpoint, CustomEndpoint>();
-
-app.UseExcos();
-```
-
-Your custom endpoint will be available at `/excos/api/custom`.
+- `styles.css`: Styling
+- `app.js`: Client-side JavaScript
 
 ## Development
 
@@ -151,7 +104,7 @@ dotnet build
 dotnet test
 ```
 
-All 9 tests use WebApplicationFactory for in-memory testing, ensuring the plugin works correctly without requiring a running server.
+All 8 tests use WebApplicationFactory for in-memory testing, ensuring the plugin works correctly without requiring a running server.
 
 ### Running the Test Server
 
