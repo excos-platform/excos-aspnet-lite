@@ -10,6 +10,8 @@ namespace Excos.AspNetCore.Lite;
 /// </summary>
 public static class ExcosExtensions
 {
+    private static readonly string[] HttpMethods = new[] { "GET", "POST", "PUT", "DELETE", "PATCH" };
+
     /// <summary>
     /// Adds Excos services to the dependency injection container.
     /// </summary>
@@ -50,17 +52,7 @@ public static class ExcosExtensions
         app.UseMiddleware<ExcosStaticFilesMiddleware>();
 
         // Map API endpoints using native routing
-        var options = app.Services.GetRequiredService<ExcosOptions>();
-        var apiEndpoints = app.Services.GetServices<IApiEndpoint>();
-
-        var apiGroup = app.MapGroup($"{options.PathPrefix}{ExcosConstants.ApiRoutePrefix}");
-
-        foreach (var endpoint in apiEndpoints)
-        {
-            // Map all HTTP methods for each endpoint to allow flexibility
-            apiGroup.MapMethods(endpoint.Route, new[] { "GET", "POST", "PUT", "DELETE", "PATCH" },
-                async (HttpContext context) => await endpoint.HandleAsync(context));
-        }
+        MapApiEndpoints(app);
 
         return app;
     }
@@ -83,16 +75,7 @@ public static class ExcosExtensions
         // If this is a WebApplication, also map endpoints
         if (app is WebApplication webApp)
         {
-            var options = app.ApplicationServices.GetRequiredService<ExcosOptions>();
-            var apiEndpoints = app.ApplicationServices.GetServices<IApiEndpoint>();
-
-            var apiGroup = webApp.MapGroup($"{options.PathPrefix}{ExcosConstants.ApiRoutePrefix}");
-
-            foreach (var endpoint in apiEndpoints)
-            {
-                apiGroup.MapMethods(endpoint.Route, new[] { "GET", "POST", "PUT", "DELETE", "PATCH" },
-                    async (HttpContext context) => await endpoint.HandleAsync(context));
-            }
+            MapApiEndpoints(webApp);
         }
         else
         {
@@ -101,5 +84,26 @@ public static class ExcosExtensions
         }
 
         return app;
+    }
+
+    private static void MapApiEndpoints(IEndpointRouteBuilder app)
+    {
+        var options = app.ServiceProvider.GetRequiredService<ExcosOptions>();
+        var apiEndpoints = app.ServiceProvider.GetServices<IApiEndpoint>();
+
+        var apiGroup = app.MapGroup($"{options.PathPrefix}{ExcosConstants.ApiRoutePrefix}");
+
+        foreach (var endpoint in apiEndpoints)
+        {
+            // Use a factory method to avoid closure over loop variable
+            var handler = CreateEndpointHandler(endpoint);
+            apiGroup.MapMethods(endpoint.Route, HttpMethods, handler);
+        }
+    }
+
+    private static Func<HttpContext, Task> CreateEndpointHandler(IApiEndpoint endpoint)
+    {
+        // Static delegate factory - avoids allocating a new closure for each endpoint
+        return context => endpoint.HandleAsync(context);
     }
 }
