@@ -39,19 +39,29 @@ public static class ExcosExtensions
     /// <param name="pathPrefix">The path prefix where the plugin will be mounted (e.g., "/excos"). If null, uses the configured PathPrefix from ExcosOptions.</param>
     /// <returns>A route group builder for the API endpoints, allowing the host to apply authorization or other policies.</returns>
     /// <remarks>
-    /// This method adds static file middleware and returns a RouteGroupBuilder for the API endpoints.
-    /// The returned builder allows the host to apply policies like RequireAuthorization() or add custom endpoints.
+    /// This method maps both static file endpoints and API endpoints.
+    /// The returned RouteGroupBuilder allows the host to apply policies like RequireAuthorization().
     /// </remarks>
     public static RouteGroupBuilder MapExcos(this IEndpointRouteBuilder endpoints, string? pathPrefix = null)
     {
         var options = endpoints.ServiceProvider.GetRequiredService<ExcosOptions>();
+        var fileProvider = endpoints.ServiceProvider.GetRequiredService<IExcosFileProvider>();
+        var contentTypeProvider = endpoints.ServiceProvider.GetRequiredService<IExcosContentTypeProvider>();
         var prefix = pathPrefix ?? options.PathPrefix;
 
-        // Add static files middleware if this is IApplicationBuilder
-        if (endpoints is IApplicationBuilder app)
+        // Map catch-all route for static files (non-API routes)
+        endpoints.MapGet($"{prefix}/{{**path}}", async (HttpContext context, string? path) =>
         {
-            app.UseMiddleware<ExcosStaticFilesMiddleware>();
-        }
+            // Skip API routes - they should not match this catch-all
+            var requestPath = context.Request.Path.Value ?? string.Empty;
+            if (requestPath.StartsWith($"{prefix}{ExcosConstants.ApiRoutePrefix}", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            await ExcosStaticFilesHandler.HandleAsync(context, fileProvider, contentTypeProvider, prefix);
+        });
 
         // Create and return the API route group
         var apiGroup = endpoints.MapGroup($"{prefix}{ExcosConstants.ApiRoutePrefix}");

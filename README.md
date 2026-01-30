@@ -72,21 +72,6 @@ excosApi.RequireAuthorization();
 app.Run();
 ```
 
-### Adding Custom Endpoints
-
-You can add custom endpoints to the plugin's API group:
-
-```csharp
-var excosApi = app.MapExcos();
-
-// Add custom endpoint
-excosApi.MapGet("/custom", () => Results.Json(new { message = "Custom data" }));
-
-// Add authenticated endpoint
-excosApi.MapGet("/secure", () => Results.Json(new { data = "secret" }))
-    .RequireAuthorization();
-```
-
 ### Configuration Options
 
 The `ExcosOptions` class provides minimal configuration:
