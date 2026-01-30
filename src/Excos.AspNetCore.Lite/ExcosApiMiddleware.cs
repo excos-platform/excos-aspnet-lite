@@ -7,18 +7,22 @@ namespace Excos.AspNetCore.Lite;
 /// </summary>
 public class ExcosApiMiddleware
 {
+    private const string ApiRoutePrefix = "/api";
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;
+    private readonly IEnumerable<IApiEndpoint> _endpoints;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExcosApiMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
     /// <param name="options">The Excos plugin options.</param>
-    public ExcosApiMiddleware(RequestDelegate next, ExcosOptions options)
+    /// <param name="endpoints">The registered API endpoints.</param>
+    public ExcosApiMiddleware(RequestDelegate next, ExcosOptions options, IEnumerable<IApiEndpoint> endpoints)
     {
         _next = next;
         _options = options;
+        _endpoints = endpoints;
     }
 
     /// <summary>
@@ -28,18 +32,20 @@ public class ExcosApiMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? string.Empty;
-        var apiPath = $"{_options.PathPrefix}{_options.ApiRoutePrefix}";
+        var apiPath = $"{_options.PathPrefix}{ApiRoutePrefix}";
 
         if (path.StartsWith(apiPath, StringComparison.OrdinalIgnoreCase))
         {
             // Extract the API route
             var apiRoute = path.Substring(apiPath.Length);
             
-            // Simple example: handle a status endpoint
-            if (apiRoute.Equals("/status", StringComparison.OrdinalIgnoreCase))
+            // Find matching endpoint
+            var endpoint = _endpoints.FirstOrDefault(e => 
+                e.Route.Equals(apiRoute, StringComparison.OrdinalIgnoreCase));
+
+            if (endpoint != null)
             {
-                context.Response.ContentType = "application/json";
-                await context.Response.WriteAsync("{\"status\":\"running\",\"version\":\"1.0.0\"}");
+                await endpoint.HandleAsync(context);
                 return;
             }
 

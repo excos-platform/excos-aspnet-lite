@@ -6,7 +6,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddExcos(options =>
 {
     options.PathPrefix = "/excos";
-    options.ApiRoutePrefix = "/api";
 });
 
 var app = builder.Build();

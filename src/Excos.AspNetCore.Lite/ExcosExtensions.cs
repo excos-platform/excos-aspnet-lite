@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 
 namespace Excos.AspNetCore.Lite;
 
@@ -23,6 +25,19 @@ public static class ExcosExtensions
         
         services.AddSingleton(options);
         
+        // Register default status endpoint
+        services.AddSingleton<IApiEndpoint, StatusEndpoint>();
+        
+        // Register embedded file provider as singleton
+        services.AddSingleton(sp =>
+        {
+            var assembly = typeof(ExcosExtensions).Assembly;
+            return new EmbeddedFileProvider(assembly, "Excos.AspNetCore.Lite.wwwroot");
+        });
+        
+        // Register content type provider as singleton
+        services.AddSingleton<FileExtensionContentTypeProvider>();
+        
         return services;
     }
 
@@ -36,13 +51,11 @@ public static class ExcosExtensions
     /// </remarks>
     public static IApplicationBuilder UseExcos(this IApplicationBuilder app)
     {
-        var options = app.ApplicationServices.GetService<ExcosOptions>() ?? new ExcosOptions();
-        
         // Add static files middleware first
-        app.UseMiddleware<ExcosStaticFilesMiddleware>(options);
+        app.UseMiddleware<ExcosStaticFilesMiddleware>();
         
         // Add API middleware
-        app.UseMiddleware<ExcosApiMiddleware>(options);
+        app.UseMiddleware<ExcosApiMiddleware>();
         
         return app;
     }
