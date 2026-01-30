@@ -16,18 +16,18 @@ public class TestWebApplication
     public static WebApplication CreateApplication(string[]? args = null)
     {
         var builder = WebApplication.CreateBuilder(args ?? Array.Empty<string>());
-        
+
         // Add Excos services
         builder.Services.AddExcos(options =>
         {
             options.PathPrefix = "/excos";
         });
-        
+
         var app = builder.Build();
-        
+
         // Register the Excos plugin middleware
         app.UseExcos();
-        
+
         return app;
     }
 }

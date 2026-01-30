@@ -22,22 +22,16 @@ public static class ExcosExtensions
     {
         var options = new ExcosOptions();
         configure?.Invoke(options);
-        
+
         services.AddSingleton(options);
-        
+
         // Register default status endpoint
         services.AddSingleton<IApiEndpoint, StatusEndpoint>();
-        
-        // Register embedded file provider as singleton
-        services.AddSingleton(sp =>
-        {
-            var assembly = typeof(ExcosExtensions).Assembly;
-            return new EmbeddedFileProvider(assembly, "Excos.AspNetCore.Lite.wwwroot");
-        });
-        
-        // Register content type provider as singleton
-        services.AddSingleton<FileExtensionContentTypeProvider>();
-        
+
+        // Register internal services in a way that doesn't leak to consumer
+        services.AddSingleton<IExcosFileProvider, ExcosFileProvider>();
+        services.AddSingleton<IExcosContentTypeProvider, ExcosContentTypeProvider>();
+
         return services;
     }
 
@@ -53,10 +47,10 @@ public static class ExcosExtensions
     {
         // Add static files middleware first
         app.UseMiddleware<ExcosStaticFilesMiddleware>();
-        
+
         // Add API middleware
         app.UseMiddleware<ExcosApiMiddleware>();
-        
+
         return app;
     }
 }

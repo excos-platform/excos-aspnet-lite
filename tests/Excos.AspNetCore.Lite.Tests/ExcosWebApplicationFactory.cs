@@ -12,7 +12,7 @@ public class ExcosWebApplicationFactory : WebApplicationFactory<TestWebApplicati
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseContentRoot(".");
-        
+
         builder.ConfigureServices(services =>
         {
             // Add Excos services
@@ -21,7 +21,7 @@ public class ExcosWebApplicationFactory : WebApplicationFactory<TestWebApplicati
                 options.PathPrefix = "/excos";
             });
         });
-        
+
         builder.Configure(app =>
         {
             // Register the Excos plugin middleware

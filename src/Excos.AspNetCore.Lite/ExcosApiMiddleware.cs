@@ -7,7 +7,6 @@ namespace Excos.AspNetCore.Lite;
 /// </summary>
 public class ExcosApiMiddleware
 {
-    private const string ApiRoutePrefix = "/api";
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;
     private readonly IEnumerable<IApiEndpoint> _endpoints;
@@ -32,15 +31,15 @@ public class ExcosApiMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? string.Empty;
-        var apiPath = $"{_options.PathPrefix}{ApiRoutePrefix}";
+        var apiPath = $"{_options.PathPrefix}{ExcosConstants.ApiRoutePrefix}";
 
         if (path.StartsWith(apiPath, StringComparison.OrdinalIgnoreCase))
         {
             // Extract the API route
             var apiRoute = path.Substring(apiPath.Length);
-            
+
             // Find matching endpoint
-            var endpoint = _endpoints.FirstOrDefault(e => 
+            var endpoint = _endpoints.FirstOrDefault(e =>
                 e.Route.Equals(apiRoute, StringComparison.OrdinalIgnoreCase));
 
             if (endpoint != null)

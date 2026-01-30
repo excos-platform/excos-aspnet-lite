@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
-using System.Reflection;
 
 namespace Excos.AspNetCore.Lite;
 
@@ -11,30 +9,27 @@ namespace Excos.AspNetCore.Lite;
 /// </summary>
 public class ExcosStaticFilesMiddleware
 {
-    private const string ApiRoutePrefix = "/api";
-    private const string DefaultDocument = "index.html";
-    
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;
-    private readonly EmbeddedFileProvider _embeddedProvider;
-    private readonly FileExtensionContentTypeProvider _contentTypeProvider;
+    private readonly IFileProvider _fileProvider;
+    private readonly IExcosContentTypeProvider _contentTypeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExcosStaticFilesMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
     /// <param name="options">The Excos plugin options.</param>
-    /// <param name="embeddedProvider">The embedded file provider for static assets.</param>
+    /// <param name="fileProvider">The file provider for static assets.</param>
     /// <param name="contentTypeProvider">The content type provider for file extensions.</param>
     public ExcosStaticFilesMiddleware(
-        RequestDelegate next, 
+        RequestDelegate next,
         ExcosOptions options,
-        EmbeddedFileProvider embeddedProvider,
-        FileExtensionContentTypeProvider contentTypeProvider)
+        IExcosFileProvider fileProvider,
+        IExcosContentTypeProvider contentTypeProvider)
     {
         _next = next;
         _options = options;
-        _embeddedProvider = embeddedProvider;
+        _fileProvider = fileProvider.FileProvider;
         _contentTypeProvider = contentTypeProvider;
     }
 
@@ -50,7 +45,7 @@ public class ExcosStaticFilesMiddleware
         if (path.StartsWith(_options.PathPrefix, StringComparison.OrdinalIgnoreCase))
         {
             // Skip API requests
-            var apiPath = $"{_options.PathPrefix}{ApiRoutePrefix}";
+            var apiPath = $"{_options.PathPrefix}{ExcosConstants.ApiRoutePrefix}";
             if (path.StartsWith(apiPath, StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);
@@ -61,11 +56,11 @@ public class ExcosStaticFilesMiddleware
             var requestPath = path.Substring(_options.PathPrefix.Length);
             if (string.IsNullOrEmpty(requestPath) || requestPath == "/")
             {
-                requestPath = "/" + DefaultDocument;
+                requestPath = "/" + ExcosConstants.DefaultDocument;
             }
 
-            var fileInfo = _embeddedProvider.GetFileInfo(requestPath.TrimStart('/'));
-            
+            var fileInfo = _fileProvider.GetFileInfo(requestPath.TrimStart('/'));
+
             if (fileInfo.Exists)
             {
                 context.Response.ContentType = GetContentType(requestPath);
@@ -75,7 +70,7 @@ public class ExcosStaticFilesMiddleware
             }
 
             // If file not found and it's not an API request, serve default document (SPA routing)
-            fileInfo = _embeddedProvider.GetFileInfo(DefaultDocument);
+            fileInfo = _fileProvider.GetFileInfo(ExcosConstants.DefaultDocument);
             if (fileInfo.Exists)
             {
                 context.Response.ContentType = "text/html";
@@ -97,7 +92,7 @@ public class ExcosStaticFilesMiddleware
     {
         if (_contentTypeProvider.TryGetContentType(path, out var contentType))
         {
-            return contentType;
+            return contentType!;
         }
         return "application/octet-stream";
     }
