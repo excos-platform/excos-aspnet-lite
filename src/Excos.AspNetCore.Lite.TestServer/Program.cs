@@ -13,7 +13,7 @@ var app = builder.Build();
 // Add a simple root endpoint
 app.MapGet("/", () => "Test server is running. Visit /excos to see the Excos plugin.");
 
-// Register the Excos plugin middleware
+// Register the Excos plugin - it will map the status endpoint automatically
 app.UseExcos();
 
 app.Run();

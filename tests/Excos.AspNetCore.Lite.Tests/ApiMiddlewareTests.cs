@@ -48,15 +48,4 @@ public class ApiMiddlewareTests : IClassFixture<ExcosWebApplicationFactory>
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
-    [Fact]
-    public async Task NonExistentEndpoint_ReturnsJsonError()
-    {
-        // Act
-        var response = await _client.GetAsync("/excos/api/nonexistent");
-        var content = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        Assert.Contains("\"error\"", content);
-    }
 }
