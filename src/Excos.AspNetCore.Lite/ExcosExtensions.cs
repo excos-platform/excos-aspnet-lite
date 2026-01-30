@@ -31,31 +31,12 @@ public static class ExcosExtensions
     /// </summary>
     /// <param name="app">The application builder.</param>
     /// <returns>The application builder for chaining.</returns>
+    /// <remarks>
+    /// Ensure AddExcos is called during service configuration before calling this method.
+    /// </remarks>
     public static IApplicationBuilder UseExcos(this IApplicationBuilder app)
     {
         var options = app.ApplicationServices.GetService<ExcosOptions>() ?? new ExcosOptions();
-        
-        // Add static files middleware first
-        app.UseMiddleware<ExcosStaticFilesMiddleware>(options);
-        
-        // Add API middleware
-        app.UseMiddleware<ExcosApiMiddleware>(options);
-        
-        return app;
-    }
-
-    /// <summary>
-    /// Adds Excos middleware to the application pipeline with custom options.
-    /// </summary>
-    /// <param name="app">The application builder.</param>
-    /// <param name="configure">An action to configure the Excos options.</param>
-    /// <returns>The application builder for chaining.</returns>
-    public static IApplicationBuilder UseExcos(
-        this IApplicationBuilder app,
-        Action<ExcosOptions> configure)
-    {
-        var options = new ExcosOptions();
-        configure(options);
         
         // Add static files middleware first
         app.UseMiddleware<ExcosStaticFilesMiddleware>(options);

@@ -13,6 +13,8 @@ public class ExcosStaticFilesMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ExcosOptions _options;
+    private readonly EmbeddedFileProvider _embeddedProvider;
+    private readonly FileExtensionContentTypeProvider _contentTypeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExcosStaticFilesMiddleware"/> class.
@@ -25,6 +27,11 @@ public class ExcosStaticFilesMiddleware
     {
         _next = next;
         _options = options;
+        
+        // Set up embedded file provider once
+        var assembly = typeof(ExcosStaticFilesMiddleware).Assembly;
+        _embeddedProvider = new EmbeddedFileProvider(assembly, "Excos.AspNetCore.Lite.wwwroot");
+        _contentTypeProvider = new FileExtensionContentTypeProvider();
     }
 
     /// <summary>
@@ -47,16 +54,13 @@ public class ExcosStaticFilesMiddleware
             }
 
             // Serve static file or default document
-            var assembly = typeof(ExcosStaticFilesMiddleware).Assembly;
-            var embeddedProvider = new EmbeddedFileProvider(assembly, "Excos.AspNetCore.Lite.wwwroot");
-            
             var requestPath = path.Substring(_options.PathPrefix.Length);
             if (string.IsNullOrEmpty(requestPath) || requestPath == "/")
             {
                 requestPath = "/" + _options.DefaultDocument;
             }
 
-            var fileInfo = embeddedProvider.GetFileInfo(requestPath.TrimStart('/'));
+            var fileInfo = _embeddedProvider.GetFileInfo(requestPath.TrimStart('/'));
             
             if (fileInfo.Exists)
             {
@@ -67,7 +71,7 @@ public class ExcosStaticFilesMiddleware
             }
 
             // If file not found and it's not an API request, serve default document (SPA routing)
-            fileInfo = embeddedProvider.GetFileInfo(_options.DefaultDocument);
+            fileInfo = _embeddedProvider.GetFileInfo(_options.DefaultDocument);
             if (fileInfo.Exists)
             {
                 context.Response.ContentType = "text/html";
@@ -77,7 +81,8 @@ public class ExcosStaticFilesMiddleware
             }
 
             context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("Not found");
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"error\":\"Not found\"}");
             return;
         }
 
@@ -86,8 +91,7 @@ public class ExcosStaticFilesMiddleware
 
     private string GetContentType(string path)
     {
-        var provider = new FileExtensionContentTypeProvider();
-        if (provider.TryGetContentType(path, out var contentType))
+        if (_contentTypeProvider.TryGetContentType(path, out var contentType))
         {
             return contentType;
         }

@@ -20,11 +20,19 @@ document.getElementById('check-status').addEventListener('click', async function
         
         if (response.ok) {
             statusResult.className = 'success';
-            statusResult.innerHTML = `
-                <strong>API Status: Online</strong><br>
-                Status: ${data.status}<br>
-                Version: ${data.version}
-            `;
+            // Use textContent and DOM manipulation to avoid XSS
+            const strong = document.createElement('strong');
+            strong.textContent = 'API Status: Online';
+            const statusText = document.createElement('div');
+            statusText.textContent = `Status: ${data.status}`;
+            const versionText = document.createElement('div');
+            versionText.textContent = `Version: ${data.version}`;
+            
+            statusResult.innerHTML = '';
+            statusResult.appendChild(strong);
+            statusResult.appendChild(document.createElement('br'));
+            statusResult.appendChild(statusText);
+            statusResult.appendChild(versionText);
         } else {
             statusResult.className = 'error';
             statusResult.textContent = `Error: ${data.error || 'Unknown error'}`;

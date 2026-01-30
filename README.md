@@ -59,8 +59,8 @@ The `ExcosOptions` class provides the following configuration properties:
 
 Once registered, the plugin provides:
 
-- **SPA Interface**: `http://localhost:5000/excos/`
-- **API Endpoints**: `http://localhost:5000/excos/api/status`
+- **SPA Interface**: `http://localhost:5202/excos/` (or your configured port)
+- **API Endpoints**: `http://localhost:5202/excos/api/status`
 
 ![API Status Response](https://github.com/user-attachments/assets/c23d6ba7-10d8-4aaf-989c-1bfc9950c348)
 
@@ -100,7 +100,7 @@ cd src/Excos.AspNetCore.Lite.TestServer
 dotnet run
 ```
 
-Then navigate to `http://localhost:5000/excos/` in your browser.
+Then navigate to `http://localhost:5202/excos/` in your browser (or the configured port from launchSettings.json).
 
 ### Adding Custom API Endpoints
 
