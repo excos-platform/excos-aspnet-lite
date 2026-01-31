@@ -10,7 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
     <ContainerRepository>excos-lite-test-server</ContainerRepository>
-    <ContainerImageTag>test</ContainerImageTag>
+    <ContainerImageTag>latest</ContainerImageTag>
   </PropertyGroup>
 
 </Project>

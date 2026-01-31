@@ -31,7 +31,7 @@ jobs:
     
     - name: Run Docker container
       run: |
-        docker run -d --name excos-test -p 8080:8080 excos-lite-test-server:test
+        docker run -d --name excos-test -p 8080:8080 excos-lite-test-server
         
     - name: Wait for container to be healthy
       run: |
