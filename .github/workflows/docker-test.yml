@@ -1,0 +1,102 @@
+name: Docker Integration Test
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  docker-test:
+    name: Build & Test Docker Container
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Build Docker image using dotnet publish
+      run: |
+        dotnet publish src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj \
+          -c Release \
+          /t:PublishContainer
+    
+    - name: Run Docker container
+      run: |
+        docker run -d --name excos-test -p 8080:8080 excos-lite-test-server
+        
+    - name: Wait for container to be healthy
+      run: |
+        echo "Waiting for container to start..."
+        for i in {1..30}; do
+          if docker logs excos-test 2>&1 | grep -q "Now listening on"; then
+            echo "Container is ready!"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "Container failed to start in time"
+            docker logs excos-test
+            exit 1
+          fi
+          sleep 1
+        done
+    
+    - name: Test Excos index endpoint
+      run: |
+        echo "Testing /excos/ endpoint..."
+        response=$(curl -s -w "\n%{http_code}" http://localhost:8080/excos/)
+        http_code=$(echo "$response" | tail -n 1)
+        body=$(echo "$response" | head -n -1)
+        
+        echo "HTTP Status Code: $http_code"
+        echo "Response body preview:"
+        echo "$body" | head -c 200
+        
+        # Check if status code is 200
+        if [ "$http_code" != "200" ]; then
+          echo "ERROR: Expected HTTP 200, got $http_code"
+          docker logs excos-test
+          exit 1
+        fi
+        
+        # Check if response contains HTML
+        if ! echo "$body" | grep -q "<!DOCTYPE html>\|<html"; then
+          echo "ERROR: Response does not appear to be HTML"
+          docker logs excos-test
+          exit 1
+        fi
+        
+        echo "✓ Successfully received HTML response with HTTP 200"
+    
+    - name: Test root endpoint
+      run: |
+        echo "Testing root endpoint..."
+        response=$(curl -s -w "\n%{http_code}" http://localhost:8080/)
+        http_code=$(echo "$response" | tail -n 1)
+        
+        if [ "$http_code" != "200" ]; then
+          echo "ERROR: Root endpoint returned $http_code"
+          exit 1
+        fi
+        
+        echo "✓ Root endpoint is accessible"
+    
+    - name: Show container logs
+      if: always()
+      run: |
+        echo "Container logs:"
+        docker logs excos-test
+    
+    - name: Stop and remove container
+      if: always()
+      run: |
+        docker stop excos-test || true
+        docker rm excos-test || true
