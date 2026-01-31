@@ -1,0 +1,10 @@
+{
+  "$schema": "https://coolify.io/schemas/coolify.json",
+  "name": "Excos.AspNetCore.Lite TestServer",
+  "build": {
+    "build_pack": "nixpacks"
+  },
+  "network": {
+    "ports": [8080]
+  }
+}
