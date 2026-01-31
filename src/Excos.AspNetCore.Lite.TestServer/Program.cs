@@ -25,3 +25,6 @@ var excosApi = app.MapExcos("/excos");
 excosApi.RequireAuthorization();
 
 app.Run();
+
+// Make the implicit Program class public so it can be used by WebApplicationFactory
+public partial class Program { }
