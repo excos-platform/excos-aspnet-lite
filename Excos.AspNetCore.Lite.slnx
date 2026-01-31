@@ -5,5 +5,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Excos.AspNetCore.Lite.Tests/Excos.AspNetCore.Lite.Tests.csproj" />
+    <Project Path="tests/Excos.AspNetCore.Lite.UITests/Excos.AspNetCore.Lite.UITests.csproj" />
   </Folder>
 </Solution>

@@ -177,3 +177,321 @@ When in doubt:
 - Favor endpoint routing for new functionality
 - Write tests to verify your changes work correctly
 - Run security scans before finalizing your work
+
+## Frontend Development
+
+### Technology Stack
+- **React 18** with **TypeScript** for UI components
+- **TanStack Query (React Query)** for server state management and data fetching
+- **Webpack 5** for bundling and module management
+- **Yarn** for package management (via Yarn.MSBuild NuGet package)
+
+### Build Process
+- Frontend code is located in `src/Excos.AspNetCore.Lite/ClientApp/`
+- Webpack outputs to `src/Excos.AspNetCore.Lite/wwwroot/`
+- The build process is integrated with MSBuild via Yarn.MSBuild package
+- Running `dotnet build` automatically runs `yarn install` and `yarn build`
+- Built files are embedded as resources in the assembly
+
+### File Structure
+```
+ClientApp/
+├── src/
+│   ├── index.tsx          # Entry point
+│   ├── App.tsx            # Main app component
+│   ├── ApiStatus.tsx      # API status component
+│   ├── styles.css         # Global styles
+│   └── utils.ts           # Utility functions
+├── package.json
+├── tsconfig.json
+└── webpack.config.js
+```
+
+### Development Guidelines
+
+#### Component Design
+- Use functional components with TypeScript
+- Prefer named exports over default exports
+- Use React Query hooks for data fetching (e.g., `useQuery`, `useMutation`)
+- Keep components focused and single-purpose
+
+#### Styling
+- CSS is injected via style-loader (no separate CSS file needed at runtime)
+- Use semantic class names that describe purpose, not appearance
+- Maintain existing gradient purple/blue color scheme
+
+#### State Management
+- Use React Query for server state (API data)
+- Use React hooks (useState, useEffect) for local UI state
+- Avoid prop drilling - lift state appropriately
+
+#### API Integration
+- Always use the path prefix detection utility (`getPathPrefix()`)
+- API calls should work regardless of mount path (e.g., `/excos`, `/custom-path`)
+- Handle loading, error, and success states explicitly
+
+#### TypeScript
+- Enable strict mode
+- Define explicit interfaces for API responses
+- Avoid `any` types - use `unknown` if type is truly unknown
+
+### Building the Frontend
+
+```bash
+# Install dependencies
+cd src/Excos.AspNetCore.Lite/ClientApp
+yarn install
+
+# Development build with watch
+yarn dev
+
+# Production build
+yarn build
+
+# Or just build the whole project
+dotnet build
+```
+
+### Common Tasks
+
+#### Adding a New Component
+1. Create `ComponentName.tsx` in `ClientApp/src/`
+2. Import and use in `App.tsx`
+3. No need to update webpack config (auto-discovered via entry point)
+
+#### Adding a New NPM Package
+1. `cd src/Excos.AspNetCore.Lite/ClientApp`
+2. `yarn add package-name` or `yarn add -D package-name` for dev dependencies
+3. Import and use in your components
+4. Next `dotnet build` will automatically install it
+
+#### Updating Styles
+1. Edit `ClientApp/src/styles.css`
+2. Webpack will automatically bundle it with the JS
+
+## Playwright Testing
+
+### Overview
+- UI tests are located in `tests/Excos.AspNetCore.Lite.UITests/`
+- Tests use C# Playwright API with xUnit test framework
+- Tests run against a real Kestrel server (not TestServer)
+- Playwright browsers are automatically installed during test run
+
+### Test Philosophy
+
+#### Focus on Functionality, Not Structure
+- **DO** test via semantic selectors (ARIA roles, test IDs, visible text)
+- **DO** verify user-visible behavior and outcomes
+- **DON'T** test implementation details or HTML structure
+- **DON'T** rely on CSS classes or element hierarchies
+
+#### Good vs. Bad Test Examples
+
+❌ **Bad - Brittle, structure-dependent:**
+```csharp
+var button = page.Locator("div.card > div > button.btn.btn-primary");
+```
+
+✅ **Good - Semantic, resilient:**
+```csharp
+var button = page.GetByTestId("check-status-button");
+// or
+var button = page.GetByRole(AriaRole.Button, new() { Name = "Check API Status" });
+```
+
+### Test Structure
+
+#### Fixtures
+- `TestServerFixture` - Manages test server lifecycle using Testcontainers
+- Uses the actual TestServer Docker container (not duplicated code)
+- Shared across all tests via xUnit collection fixtures
+- Container starts once per test run, disposed at end
+
+#### Test Infrastructure
+The Playwright tests use **Testcontainers** to run the actual TestServer Docker container:
+- No duplication of server setup code - uses the same container as docker-test.yml workflow
+- Automatically builds and publishes container before tests via MSBuild target
+- Container lifecycle managed by Testcontainers (automatic cleanup)
+- Dynamic port mapping to avoid conflicts
+
+```csharp
+// TestServerFixture uses Testcontainers
+_container = new ContainerBuilder()
+    .WithImage("excos-lite-test-server:latest")
+    .WithPortBinding(8080, true)
+    .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Now listening on"))
+    .Build();
+```
+
+#### Test Organization
+```csharp
+[Collection("TestServer")]
+public class ExcosPluginUITests : IAsyncLifetime
+{
+    private readonly TestServerFixture _fixture;
+    private IPlaywright? _playwright;
+    private IBrowser? _browser;
+    private IPage? _page;
+
+    // Setup/teardown in InitializeAsync/DisposeAsync
+    // Individual tests follow
+}
+```
+
+### Writing Playwright Tests
+
+#### Test Naming
+- Use descriptive names that explain the behavior being tested
+- Format: `ComponentOrFeature_Scenario_ExpectedOutcome`
+- Examples: `ApiStatus_Button_Fetches_And_Displays_Status`, `PluginUI_Loads_Successfully`
+
+#### Selectors Priority
+1. **Test IDs** - `data-testid` attributes (most stable)
+   ```csharp
+   page.GetByTestId("check-status-button")
+   ```
+
+2. **ARIA Roles** - Semantic HTML roles
+   ```csharp
+   page.GetByRole(AriaRole.Button, new() { Name = "Check API Status" })
+   ```
+
+3. **Visible Text** - User-visible content
+   ```csharp
+   page.GetByText("Welcome to Excos")
+   ```
+
+4. **Labels** - Form labels
+   ```csharp
+   page.GetByLabel("Username")
+   ```
+
+#### Assertions
+- Use Playwright's async assertions with `await Assertions.Expect()`
+- Assertions have built-in retries and waiting
+- Examples:
+```csharp
+await Assertions.Expect(element).ToBeVisibleAsync();
+await Assertions.Expect(element).ToContainTextAsync("Expected text");
+await Assertions.Expect(element).ToBeEnabledAsync();
+```
+
+#### Waiting and Timing
+- **DON'T** use arbitrary `Task.Delay()` or `Thread.Sleep()`
+- **DO** use Playwright's built-in waiting:
+```csharp
+await page.WaitForSelectorAsync("#root > div");
+await Assertions.Expect(element).ToBeVisibleAsync();
+```
+
+#### Authentication
+- Tests use Basic Authentication (username: "user", password: "password")
+- Auth headers are set in the browser context during test setup
+- No need to handle auth in individual tests
+
+### Running Playwright Tests
+
+```bash
+# Run all UI tests
+dotnet test tests/Excos.AspNetCore.Lite.UITests/
+
+# Run specific test
+dotnet test --filter "FullyQualifiedName~PluginUI_Loads_Successfully"
+
+# With detailed output
+dotnet test --logger "console;verbosity=detailed"
+```
+
+### Playwright Best Practices
+
+#### 1. Test User Journeys, Not Implementation
+Focus on what users do and see, not how the code works internally.
+
+#### 2. Use Page Object Pattern for Complex Interactions
+For reusable interactions, create helper methods:
+```csharp
+private async Task ClickStatusButtonAsync()
+{
+    var button = _page!.GetByTestId("check-status-button");
+    await button.ClickAsync();
+}
+```
+
+#### 3. Make Tests Independent
+Each test should be able to run in isolation and in any order.
+
+#### 4. Handle Dynamic Content
+Use Playwright's auto-waiting instead of manual delays:
+```csharp
+// Playwright automatically waits for element
+await Assertions.Expect(statusResult).ToBeVisibleAsync();
+```
+
+#### 5. Test Error States
+Don't just test the happy path - verify error handling too.
+
+#### 6. Keep Tests Fast
+- Share test server across tests (via collection fixture)
+- Don't navigate unnecessarily
+- Use keyboard shortcuts where appropriate
+
+### Debugging Playwright Tests
+
+#### Run Tests in Headed Mode (if supported in environment)
+```csharp
+_browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+{
+    Headless = false,  // Shows browser
+    SlowMo = 500       // Slows down operations
+});
+```
+
+#### Take Screenshots on Failure
+```csharp
+if (/* test failed */)
+{
+    await _page.ScreenshotAsync(new() { Path = "failure.png" });
+}
+```
+
+#### Use Browser DevTools Protocol
+```csharp
+await _page.PauseAsync();  // Pauses execution for debugging
+```
+
+### Common Pitfalls
+
+1. ❌ Testing CSS classes or HTML structure
+2. ❌ Using `Task.Delay()` instead of Playwright's built-in waiting
+3. ❌ Not handling authentication in browser context
+4. ❌ Creating tests that depend on execution order
+5. ❌ Using xpath when semantic selectors are available
+6. ❌ Not testing mobile/responsive behavior when relevant
+
+## Integration with CI
+
+### Continuous Integration Flow
+1. **dotnet format** - Verifies code formatting
+2. **dotnet restore** - Restores NuGet packages
+3. **dotnet build** - Builds solution (includes frontend via Yarn.MSBuild)
+   - Runs `yarn install` automatically
+   - Runs `yarn build` automatically
+   - Embeds frontend assets as resources
+4. **dotnet test** - Runs all tests
+   - Unit/integration tests in `Excos.AspNetCore.Lite.Tests`
+   - Playwright UI tests in `Excos.AspNetCore.Lite.UITests`
+   - Playwright browsers are automatically installed
+
+### Build Performance
+- Yarn lock file (`yarn.lock`) is committed for reproducible builds
+- Node modules are not committed (in .gitignore)
+- Webpack output is not committed (in .gitignore)
+- First build after clean checkout takes longer due to npm install
+- Subsequent builds are faster with cached node_modules
+
+### Environment Requirements
+- .NET 10 SDK
+- Node.js 20+ and Yarn (for local development)
+- Yarn.MSBuild handles yarn installation in CI
+- Playwright browsers auto-install on first test run
+

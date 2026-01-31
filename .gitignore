@@ -73,3 +73,15 @@ artifacts/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Frontend build artifacts
+**/ClientApp/dist/
+**/wwwroot/app.js
+**/wwwroot/app.js.map
+**/wwwroot/app.js.LICENSE.txt
