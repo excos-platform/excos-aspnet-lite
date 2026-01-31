@@ -14,45 +14,36 @@ Excos.AspNetCore.Lite is a lightweight plugin system for ASP.NET Core that provi
 ## Architecture Principles
 
 ### Pure Endpoint Routing
-- **Never use middleware** - use endpoint routing exclusively via `MapGet`, `MapGroup`, etc.
-- All static file serving and API routing must be done through endpoints, not middleware
-- Use catch-all endpoint patterns like `{prefix}/{**path}` for static file serving
-- Return `RouteGroupBuilder` from mapping methods to enable host control
+- **Prefer endpoint routing over middleware** - use `MapGet`, `MapGroup`, etc.
+- When adding new functionality, evaluate if endpoint routing can achieve the goal before creating middleware
+- Extension methods that map endpoints should return `RouteGroupBuilder` to enable host control (e.g., applying authorization policies)
 
-### Host Control Pattern
-- Extension methods that map plugin endpoints should return `RouteGroupBuilder`
-- This allows the host application to apply policies like `.RequireAuthorization()`
-- Example pattern:
-  ```csharp
-  var excosApi = app.MapExcos("/excos");
-  excosApi.RequireAuthorization();  // Host can apply policies
-  ```
-
-### Internal Implementation
-- Keep implementation details **internal** - only expose what's necessary for consumers
-- Public API surface should be minimal and well-defined
-- Use internal interfaces to wrap framework types (e.g., `IExcosFileProvider`, `IExcosContentTypeProvider`)
-- This prevents "leaking" framework services into consumer's DI container
+### Public API Design
+- Keep the public API surface **minimal** - only expose what consumers need
+- Make implementation details **internal** by default
+- Use internal interfaces to wrap framework types when registering them in DI
+- This prevents "leaking" framework services into the consumer's DI container
 
 ### Service Registration
-- Wrap singleton services like `EmbeddedFileProvider` and `FileExtensionContentTypeProvider` in internal interfaces
-- Register wrapped services to avoid polluting consumer's DI container
-- Services should be registered once and injected where needed
+- Prefer singleton lifetime for services that don't hold per-request state
+- When registering framework types (e.g., `EmbeddedFileProvider`, `FileExtensionContentTypeProvider`), wrap them in internal interfaces
+- Avoid polluting the consumer's DI container with internal dependencies
 
-### Constants
-- Create dedicated constants classes (e.g., `ExcosConstants`) to centralize hardcoded values
-- Avoid duplicating constants across multiple files
-- Keep API routes, default documents, and other fixed values as constants
-- Configuration that shouldn't change (like `/api` suffix or `index.html`) should be hardcoded constants, not options
+### Constants and Configuration
+- Centralize related constants in dedicated classes
+- Avoid duplicating constant values across multiple files
+- Use the Options pattern for truly configurable settings
+- Don't make things configurable if:
+  - They are fundamental to how the plugin works
+  - The embedded frontend needs to know them at compile time
+  - Changing them would break the plugin's core functionality
 
 ## Code Organization
 
 ### Options Pattern
 - Keep options classes even if currently empty - they're reserved for future configuration
-- Don't add options for things that:
-  - The embedded frontend needs to know at compile time (e.g., API route)
-  - Are fundamental to the plugin's operation (e.g., default document)
-- Path prefixes and other host-level concerns should be method parameters, not options
+- Evaluate carefully what should be configurable vs. what should be hardcoded
+- Host-level concerns (like path prefixes) are often better as method parameters than options
 
 ### File Structure
 - Main library: `src/Excos.AspNetCore.Lite/`
@@ -63,38 +54,25 @@ Excos.AspNetCore.Lite is a lightweight plugin system for ASP.NET Core that provi
 
 ### Test Framework
 - Use **xUnit** for all tests
-- Use `WebApplicationFactory<T>` for in-memory integration testing
-- For purely endpoint-based scenarios, use `HostBuilder` with `UseEndpoints` pattern
+- Use `WebApplicationFactory<T>` for in-memory integration testing of the plugin
+- For edge cases testing pure endpoint scenarios without WebApplication, use `HostBuilder` with `UseEndpoints` pattern
 
 ### Test Organization
-- Group related tests in dedicated test classes
-- Create separate test classes for:
-  - WebApplication-based tests (using `WebApplicationFactory`)
-  - Pure endpoint routing tests (using `HostBuilder` and `UseEndpoints`)
-- Aim for at least 8-12 tests covering all major scenarios
+- Group related tests in dedicated test classes (e.g., separate classes for API tests, static file tests, etc.)
+- Maintain comprehensive test coverage of all major scenarios
+- Create tests for both successful paths and failure scenarios
 
 ### Test Helper Methods
-- **Extract repeated code into helper methods** to reduce duplication
-- Tests should be short and easy to read
-- Use lambda parameters in helpers to allow test-specific customization
-- Example helper pattern:
-  ```csharp
-  private static HttpClient CreateTestClient(Action<RouteGroupBuilder>? configureEndpoints = null)
-  {
-      // Setup code...
-      var excosApi = endpoints.MapExcos("/excos");
-      configureEndpoints?.Invoke(excosApi);
-      // Return client...
-  }
-  ```
+- **Extract repeated setup code into helper methods** to reduce duplication and improve readability
+- Tests should be short, focused, and easy to understand
+- Use optional lambda/action parameters in helpers to allow test-specific customization
+- Keep the test intent clear - what you're testing should be obvious from reading the test
 
 ### Test Coverage
-- Test both successful and failure scenarios
-- Test authentication/authorization when `RequireAuthorization()` is applied
-- Test SPA routing fallback to `index.html`
-- Test static file serving for various content types
-- Test API endpoints with proper status codes and responses
-- Ensure tests work with purely endpoint-based consumers (no `IApplicationBuilder` dependency)
+- Test both successful and error/edge case scenarios
+- When adding features with authorization, include tests with and without authorization applied
+- Verify proper HTTP status codes and response formats
+- Test that functionality works correctly regardless of hosting pattern (WebApplication vs pure endpoints)
 
 ### Assertions
 - Remove unnecessary API calls if assertions are already made earlier in the test
@@ -141,35 +119,32 @@ All pull requests must pass:
 
 ## Specific Code Patterns
 
-### Static File Handling
-- Use static methods with explicit service parameters
-- Example: `ExcosStaticFilesHandler.HandleAsync(HttpContext, IExcosFileProvider, IExcosContentTypeProvider)`
-- Map as endpoint: `app.MapGet("{prefix}/{**path}", (HttpContext ctx) => Handler.HandleAsync(...))`
+### Endpoint Handlers
+- For complex endpoint logic, consider extracting to static handler methods
+- Pass required services as explicit parameters rather than relying on DI in the handler
+- This makes dependencies clear and improves testability
 
 ### API Endpoints
-- Use native `MapGet`, `MapPost`, etc. with `Results.Json()` and other result types
-- Group related endpoints with `MapGroup`
-- No custom endpoint abstractions - use framework features directly
-
-### Authentication Demo
-- Test server can demonstrate basic authentication
-- Use `RequireAuthorization()` on the returned `RouteGroupBuilder` to protect endpoints
+- Use native ASP.NET Core result types: `Results.Json()`, `Results.Ok()`, `Results.NotFound()`, etc.
+- Group related endpoints with `MapGroup` for cleaner organization
+- Leverage framework features directly rather than creating custom abstractions
 
 ## Common Pitfalls to Avoid
 
-1. ❌ Creating middleware when endpoints would suffice
+1. ❌ Creating middleware when endpoint routing can achieve the same goal
 2. ❌ Making configuration options for things that shouldn't be configurable
-3. ❌ Exposing framework types directly in public API
-4. ❌ Duplicating constants across files
+3. ❌ Exposing internal framework types directly in the public API
+4. ❌ Duplicating constants across multiple files
 5. ❌ Creating per-request instances of services that could be singletons
-6. ❌ Repeating code in tests instead of using helper methods
-7. ❌ Adding custom abstractions when native ASP.NET Core features work fine
-8. ❌ Relying on `IApplicationBuilder` when targeting purely endpoint-based consumers
+6. ❌ Repeating setup code in tests instead of using helper methods
+7. ❌ Adding custom abstractions when native ASP.NET Core features are sufficient
+8. ❌ Making assumptions about the hosting environment (support both WebApplication and pure endpoint patterns)
 
 ## Questions?
 
 When in doubt:
-- Prefer simplicity and native framework features
-- Keep the public API surface minimal
-- Use endpoint routing over middleware
-- Add tests to verify your changes work correctly
+- Prefer simplicity over complexity
+- Use native framework features over custom abstractions
+- Keep the public API minimal and well-designed
+- Favor endpoint routing for new functionality
+- Write tests to verify your changes work correctly
