@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
-    <ContainerRepository>excos-testserver</ContainerRepository>
+    <ContainerRepository>excos-lite-test-server</ContainerRepository>
     <ContainerImageTag>test</ContainerImageTag>
   </PropertyGroup>
 
