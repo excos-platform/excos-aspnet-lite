@@ -13,7 +13,7 @@ The repository contains two configuration files for deploying to Coolify:
 
 ### The Conflict
 
-The test server project (`Excos.AspNetCore.Lite.TestServer.csproj`) currently has the following settings:
+The test server project (`Excos.AspNetCore.Lite.TestServer.csproj`) previously had the following settings enabled:
 
 ```xml
 <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
@@ -28,6 +28,8 @@ dotnet publish -t:PublishContainer
 ```
 
 This creates a container image **without needing a Dockerfile**.
+
+**Note**: These settings are now commented out in the project file to prevent conflicts with nixpacks (see below).
 
 ### Why This Conflicts with Nixpacks
 
@@ -67,12 +69,16 @@ When using .NET SDK container support:
 
 ## Recommendations
 
-### Option 1: Use Nixpacks (Recommended for Coolify)
+### Option 1: Use Nixpacks (Recommended for Coolify - Currently Configured)
 
-If deploying to Coolify with nixpacks, **remove or disable** the .NET SDK container support settings from the `.csproj` file:
+The repository is currently configured to use nixpacks for Coolify deployment. The .NET SDK container support settings have been commented out in the `.csproj` file to prevent conflicts.
+
+If you want to ensure they remain disabled, verify the settings are commented:
 
 ```xml
-<!-- Remove or comment out these lines -->
+<!-- 
+  Note: EnableSdkContainerSupport is commented out to avoid conflicts with nixpacks.
+-->
 <!--
 <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 <ContainerRepository>excos-lite-test-server</ContainerRepository>
@@ -86,12 +92,12 @@ This approach:
 - ✅ Eliminates confusion about which container system is being used
 - ❌ Requires nixpacks configuration instead of .NET-native approach
 
-### Option 2: Use .NET SDK Container Support (Alternative)
+### Option 2: Use .NET SDK Container Support (Alternative - Not Currently Configured)
 
-If you want to use .NET's built-in container support instead:
+If you want to switch to using .NET's built-in container support instead:
 
 1. **Remove** `coolify.json` and `nixpacks.toml`
-2. **Keep** the `EnableSdkContainerSupport` settings in `.csproj`
+2. **Uncomment** the `EnableSdkContainerSupport` settings in the `.csproj` file
 3. Use a **Dockerfile-based deployment** or direct container publishing:
 
 ```bash
