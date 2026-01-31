@@ -14,10 +14,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.0" />
+    <PackageReference Include="Yarn.MSBuild" Version="1.22.19" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\**\*" />
   </ItemGroup>
+
+  <Target Name="BuildClientApp" BeforeTargets="BeforeBuild">
+    <Exec Command="yarn install --frozen-lockfile" WorkingDirectory="ClientApp" />
+    <Exec Command="yarn build" WorkingDirectory="ClientApp" />
+  </Target>
 
 </Project>
