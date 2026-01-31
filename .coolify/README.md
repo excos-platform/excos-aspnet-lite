@@ -4,26 +4,35 @@ This directory contains the Docker-based deployment configuration for Coolify.
 
 ## Files
 
-- **Dockerfile** - Multi-stage Dockerfile that builds the frontend and backend
+- **Dockerfile** - Single-stage Dockerfile with Node.js + .NET SDK for integrated build
 - **docker-compose.yml** - Docker Compose configuration for Coolify
 
 ## Build Process
 
-The Dockerfile uses a multi-stage build:
+The Dockerfile uses a simplified 2-stage build that leverages MSBuild's integrated frontend build:
 
-1. **Stage 1: Frontend Build** (Node.js 20 Alpine)
-   - Installs frontend dependencies with yarn
-   - Builds the React/TypeScript frontend using webpack
-   - Outputs to `wwwroot/app.js`
-
-2. **Stage 2: .NET Build** (dotnet-sdk:10.0)
+1. **Build Stage** (.NET SDK 10.0 + Node.js 20)
+   - Installs Node.js and yarn into the .NET SDK image
+   - Copies all source files (src/ and tests/)
    - Restores NuGet packages
-   - Copies built frontend assets
-   - Publishes the .NET application with `/p:BuildClientApp=false`
+   - Runs `dotnet publish` which triggers MSBuild's `BuildClientApp` target
+   - The MSBuild target automatically runs `yarn install` and `yarn build`
+   - Publishes the complete application
 
-3. **Stage 3: Runtime** (dotnet-aspnet:10.0)
+2. **Runtime Stage** (.NET ASP.NET 10.0)
    - Minimal runtime image
+   - Copies published application
    - Runs the application on port 8080
+
+## Why This Approach?
+
+Previously, we tried a 3-stage build with separate Node.js and .NET stages. However, the .NET project has integrated frontend build via MSBuild (using `Yarn.MSBuild` package), which requires Node.js/yarn to be available during the .NET build.
+
+This simplified approach:
+- Installs Node.js into the SDK image once
+- Lets MSBuild handle the frontend build automatically
+- Reduces complexity and potential sync issues
+- Resilient to new projects being added (copies entire src/ and tests/ directories)
 
 ## Environment Variables
 
@@ -32,4 +41,4 @@ The Dockerfile uses a multi-stage build:
 
 ## Deployment
 
-Coolify will automatically use these files based on the `coolify.json` configuration in the repository root.
+Configure Coolify manually to use the docker-compose file in this directory.

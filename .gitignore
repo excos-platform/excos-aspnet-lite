@@ -85,6 +85,3 @@ yarn-error.log
 **/wwwroot/app.js
 **/wwwroot/app.js.map
 **/wwwroot/app.js.LICENSE.txt
-
-# Coolify/Nixpacks build output
-out/

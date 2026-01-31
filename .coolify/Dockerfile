@@ -1,52 +1,40 @@
-# Multi-stage Dockerfile for Excos.AspNetCore.Lite TestServer
+# Dockerfile for Excos.AspNetCore.Lite TestServer
+# Uses .NET SDK with Node.js installed for integrated frontend build via MSBuild
 
-# Stage 1: Build frontend assets
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/src/Excos.AspNetCore.Lite/ClientApp
-
-# Copy package files and install dependencies
-COPY src/Excos.AspNetCore.Lite/ClientApp/package.json ./
-COPY src/Excos.AspNetCore.Lite/ClientApp/yarn.lock ./
-RUN yarn install --frozen-lockfile
-
-# Copy frontend source and build
-COPY src/Excos.AspNetCore.Lite/ClientApp/ ./
-RUN yarn build
-
-# Stage 2: Build .NET application
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dotnet-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Copy solution and project files
-COPY Excos.AspNetCore.Lite.slnx ./
-COPY src/Excos.AspNetCore.Lite/Excos.AspNetCore.Lite.csproj ./src/Excos.AspNetCore.Lite/
-COPY src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj ./src/Excos.AspNetCore.Lite.TestServer/
+# Install Node.js and yarn for frontend build (required by MSBuild target)
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Restore dependencies
+# Copy solution and project files
+# Using wildcards to be resilient to new projects being added
+COPY *.slnx ./
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+# Restore dependencies for the TestServer (which will also restore referenced projects)
 RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj
 
-# Copy all source code
-COPY src/ ./src/
-
-# Copy built frontend assets from previous stage to wwwroot
-# Webpack outputs to ../wwwroot from ClientApp directory, so files are at:
-# /app/src/Excos.AspNetCore.Lite/wwwroot/app.js
-COPY --from=frontend-build /app/src/Excos.AspNetCore.Lite/wwwroot/app.js ./src/Excos.AspNetCore.Lite/wwwroot/app.js
-COPY --from=frontend-build /app/src/Excos.AspNetCore.Lite/wwwroot/app.js.LICENSE.txt ./src/Excos.AspNetCore.Lite/wwwroot/app.js.LICENSE.txt
-
 # Build and publish the application
+# MSBuild will automatically run the BuildClientApp target which installs yarn deps and builds frontend
 RUN dotnet publish src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj \
     -c Release \
     -o /app/publish \
-    --no-restore \
-    /p:BuildClientApp=false
+    --no-restore
 
-# Stage 3: Runtime image
+# Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Copy published application
-COPY --from=dotnet-build /app/publish ./
+COPY --from=build /app/publish ./
 
 # Expose port
 EXPOSE 8080
