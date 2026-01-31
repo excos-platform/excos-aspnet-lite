@@ -27,11 +27,11 @@ public class ExcosPluginUITests : IAsyncLifetime
         {
             Headless = true
         });
-        
+
         // Create context with basic auth headers
         var authHeader = Convert.ToBase64String(
             System.Text.Encoding.UTF8.GetBytes($"{_fixture.Username}:{_fixture.Password}"));
-        
+
         _context = await _browser.NewContextAsync(new BrowserNewContextOptions
         {
             ExtraHTTPHeaders = new Dictionary<string, string>
@@ -39,7 +39,7 @@ public class ExcosPluginUITests : IAsyncLifetime
                 ["Authorization"] = $"Basic {authHeader}"
             }
         });
-        
+
         _page = await _context.NewPageAsync();
     }
 
@@ -60,7 +60,7 @@ public class ExcosPluginUITests : IAsyncLifetime
         // Assert - Check that the root React element is present and has content
         var rootElement = _page.Locator("#root > div");
         await Assertions.Expect(rootElement).ToBeVisibleAsync();
-        
+
         // Verify main heading is present (functional check, not structure check)
         var heading = _page.GetByRole(AriaRole.Heading, new() { Name = "Excos ASP.NET Core Plugin" });
         await Assertions.Expect(heading).ToBeVisibleAsync();
@@ -85,7 +85,7 @@ public class ExcosPluginUITests : IAsyncLifetime
 
         // Act - Find button by its test id (semantic identifier)
         var statusButton = _page.GetByTestId("check-status-button");
-        
+
         // Assert
         await Assertions.Expect(statusButton).ToBeVisibleAsync();
         await Assertions.Expect(statusButton).ToBeEnabledAsync();
@@ -104,7 +104,7 @@ public class ExcosPluginUITests : IAsyncLifetime
         // Assert - Wait for and verify the status result appears
         var statusResult = _page.GetByTestId("status-result");
         await Assertions.Expect(statusResult).ToBeVisibleAsync();
-        
+
         // Verify success state is displayed
         await Assertions.Expect(statusResult).ToContainTextAsync("API Status: Online");
         await Assertions.Expect(statusResult).ToContainTextAsync("Status: running");
@@ -120,7 +120,7 @@ public class ExcosPluginUITests : IAsyncLifetime
         // Assert - Check for features section by heading
         var featuresHeading = _page.GetByRole(AriaRole.Heading, new() { Name = "Features" });
         await Assertions.Expect(featuresHeading).ToBeVisibleAsync();
-        
+
         // Verify some key features are listed (content check, not structure)
         await Assertions.Expect(_page.GetByText("Embedded static file serving")).ToBeVisibleAsync();
         await Assertions.Expect(_page.GetByText("SPA routing support")).ToBeVisibleAsync();
@@ -131,7 +131,7 @@ public class ExcosPluginUITests : IAsyncLifetime
     {
         // Arrange & Act - Navigate to the plugin at /excos path
         await _page!.GotoAsync($"{_fixture.BaseUrl}/excos/");
-        
+
         // Click the status button to trigger API call
         var statusButton = _page.GetByTestId("check-status-button");
         await statusButton.ClickAsync();
