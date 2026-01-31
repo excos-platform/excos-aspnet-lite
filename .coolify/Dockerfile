@@ -29,6 +29,8 @@ RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.Te
 COPY src/ ./src/
 
 # Copy built frontend assets from previous stage to wwwroot
+# Webpack outputs to ../wwwroot from ClientApp directory, so files are at:
+# /app/src/Excos.AspNetCore.Lite/wwwroot/app.js
 COPY --from=frontend-build /app/src/Excos.AspNetCore.Lite/wwwroot/app.js ./src/Excos.AspNetCore.Lite/wwwroot/app.js
 COPY --from=frontend-build /app/src/Excos.AspNetCore.Lite/wwwroot/app.js.LICENSE.txt ./src/Excos.AspNetCore.Lite/wwwroot/app.js.LICENSE.txt
 
