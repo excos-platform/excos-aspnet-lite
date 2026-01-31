@@ -13,14 +13,20 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy solution and project files
-# Using wildcards to be resilient to new projects being added
-COPY *.slnx ./
+# Copy solution file and project files for restore (better layer caching)
+COPY Excos.AspNetCore.Lite.slnx ./
+COPY src/**/*.csproj src/
+COPY tests/**/*.csproj tests/
+# Copy frontend package files for yarn install during MSBuild
+COPY src/Excos.AspNetCore.Lite/ClientApp/package.json src/Excos.AspNetCore.Lite/ClientApp/
+COPY src/Excos.AspNetCore.Lite/ClientApp/yarn.lock src/Excos.AspNetCore.Lite/ClientApp/
+
+# Restore dependencies (cached unless project files change)
+RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj
+
+# Copy remaining source code
 COPY src/ ./src/
 COPY tests/ ./tests/
-
-# Restore dependencies for the TestServer (which will also restore referenced projects)
-RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj
 
 # Build and publish the application
 # MSBuild will automatically run the BuildClientApp target which installs yarn deps and builds frontend
