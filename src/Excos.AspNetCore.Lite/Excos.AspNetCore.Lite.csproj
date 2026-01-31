@@ -29,7 +29,8 @@
     <!-- Add the generated files to EmbeddedResource after they're created -->
     <ItemGroup>
       <EmbeddedResource Include="wwwroot\app.js" />
-      <EmbeddedResource Include="wwwroot\app.js.map" />
+      <!-- Only include source maps in Debug builds -->
+      <EmbeddedResource Include="wwwroot\app.js.map" Condition="'$(Configuration)' == 'Debug'" />
       <EmbeddedResource Include="wwwroot\app.js.LICENSE.txt" Condition="Exists('wwwroot\app.js.LICENSE.txt')" />
     </ItemGroup>
   </Target>
