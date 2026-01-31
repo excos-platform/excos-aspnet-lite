@@ -14,9 +14,9 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.Playwright" Version="1.49.1" />
+    <PackageReference Include="Testcontainers" Version="4.2.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -28,5 +28,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Excos.AspNetCore.Lite.TestServer\Excos.AspNetCore.Lite.TestServer.csproj" />
   </ItemGroup>
+
+  <!-- Build the container before running tests -->
+  <Target Name="PublishTestServerContainer" BeforeTargets="VSTest">
+    <Exec Command="dotnet publish $(MSBuildProjectDirectory)/../../src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj -c $(Configuration) /t:PublishContainer" />
+  </Target>
 
 </Project>

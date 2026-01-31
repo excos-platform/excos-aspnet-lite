@@ -1,20 +1,17 @@
-using Excos.AspNetCore.Lite;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.Playwright;
 
 namespace Excos.AspNetCore.Lite.UITests;
 
 /// <summary>
 /// Fixture for managing the test server lifecycle for UI tests.
-/// Uses a real Kestrel server so Playwright can connect to it.
+/// Uses Testcontainers to run the actual TestServer Docker container.
 /// Also manages Playwright installation and initialization.
 /// </summary>
 public class TestServerFixture : IAsyncLifetime
 {
-    private IHost? _host;
+    private IContainer? _container;
     private static bool _playwrightInstalled = false;
     private static readonly object _installLock = new object();
 
@@ -50,38 +47,18 @@ public class TestServerFixture : IAsyncLifetime
         // Install Playwright browsers if not already installed (only once per test run)
         EnsurePlaywrightInstalled();
 
-        // Use a fixed port to avoid issues
-        var port = 5123; // Use a non-standard port to avoid conflicts
+        // Build and start the TestServer container
+        _container = new ContainerBuilder()
+            .WithImage("excos-lite-test-server:latest")
+            .WithPortBinding(8080, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Now listening on"))
+            .Build();
+
+        await _container.StartAsync();
+
+        // Get the mapped port
+        var port = _container.GetMappedPublicPort(8080);
         BaseUrl = $"http://localhost:{port}";
-
-        // Create a real web host directly (not using WebApplicationFactory which uses TestServer)
-        var builder = WebApplication.CreateBuilder();
-
-        // Add Excos services
-        builder.Services.AddExcos();
-
-        // Add authentication services
-        builder.Services.AddAuthentication("BasicAuthentication")
-            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-        builder.Services.AddAuthorization();
-
-        builder.WebHost.UseKestrel();
-        builder.WebHost.UseUrls(BaseUrl);
-
-        var app = builder.Build();
-
-        app.UseAuthentication();
-        app.UseAuthorization();
-
-        // Add a simple root endpoint
-        app.MapGet("/", () => "Test server is running. Visit /excos to see the Excos plugin.");
-
-        // Map the Excos plugin at /excos
-        var excosApi = app.MapExcos("/excos");
-        excosApi.RequireAuthorization();
-
-        _host = app;
-        await _host.StartAsync();
 
         // Give the server a moment to fully start
         await Task.Delay(500);
@@ -89,10 +66,10 @@ public class TestServerFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        if (_host != null)
+        if (_container != null)
         {
-            await _host.StopAsync();
-            _host.Dispose();
+            await _container.StopAsync();
+            await _container.DisposeAsync();
         }
     }
 }
