@@ -136,17 +136,6 @@ dotnet run
 
 Then navigate to `http://localhost:5202/excos/` in your browser (or the configured port from launchSettings.json).
 
-## Deployment
-
-### Coolify Deployment
-
-The test server can be deployed to Coolify using nixpacks. Configuration files are provided in the repository root:
-
-- `coolify.json` - Coolify configuration specifying nixpacks as the build pack
-- `nixpacks.toml` - Build and runtime configuration for nixpacks
-
-For detailed information about deploying to Coolify and understanding the conflict with .NET SDK's built-in container support, see [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md).
-
 ### Customizing the SPA
 
 The SPA interface can be customized by modifying files in the `src/Excos.AspNetCore.Lite/wwwroot/` directory:
