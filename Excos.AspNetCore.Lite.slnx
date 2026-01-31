@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj" />
+    <Project Path="src/Excos.AspNetCore.Lite/Excos.AspNetCore.Lite.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Excos.AspNetCore.Lite.Tests/Excos.AspNetCore.Lite.Tests.csproj" />
+  </Folder>
+</Solution>
