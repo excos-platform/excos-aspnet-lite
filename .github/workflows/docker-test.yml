@@ -49,10 +49,26 @@ jobs:
           sleep 1
         done
     
+    - name: Test Excos endpoint requires authentication
+      run: |
+        echo "Testing /excos/ endpoint without authentication..."
+        http_code=$(curl -s -w "%{http_code}" -o /dev/null http://localhost:8080/excos/)
+        
+        echo "HTTP Status Code: $http_code"
+        
+        # Check if status code is 401 (Unauthorized)
+        if [ "$http_code" != "401" ]; then
+          echo "ERROR: Expected HTTP 401 Unauthorized, got $http_code"
+          docker logs excos-test
+          exit 1
+        fi
+        
+        echo "✓ Endpoint correctly requires authentication (401 Unauthorized)"
+    
     - name: Test Excos index endpoint
       run: |
         echo "Testing /excos/ endpoint..."
-        response=$(curl -s -w "\n%{http_code}" http://localhost:8080/excos/)
+        response=$(curl -s -w "\n%{http_code}" -u user:password http://localhost:8080/excos/)
         http_code=$(echo "$response" | tail -n 1)
         body=$(echo "$response" | head -n -1)
         
