@@ -8,9 +8,17 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 
+      Note: EnableSdkContainerSupport is commented out to avoid conflicts with nixpacks.
+      For Coolify deployment, nixpacks handles container building (see nixpacks.toml).
+      To use .NET SDK's built-in container support instead, uncomment these lines and
+      remove coolify.json/nixpacks.toml. See COOLIFY_DEPLOYMENT.md for details.
+    -->
+    <!--
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
     <ContainerRepository>excos-lite-test-server</ContainerRepository>
     <ContainerImageTag>latest</ContainerImageTag>
+    -->
   </PropertyGroup>
 
 </Project>
