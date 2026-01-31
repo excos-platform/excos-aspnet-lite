@@ -23,12 +23,12 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         // Get authorization header
-        if (!Request.Headers.ContainsKey("Authorization"))
+        if (!Request.Headers.TryGetValue("Authorization", out var authHeaderValues))
         {
             return Task.FromResult(AuthenticateResult.Fail("Missing Authorization header"));
         }
 
-        var authHeader = Request.Headers["Authorization"].ToString();
+        var authHeader = authHeaderValues.ToString();
         if (!authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
         {
             return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header"));
