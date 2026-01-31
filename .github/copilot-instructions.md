@@ -302,9 +302,26 @@ var button = page.GetByRole(AriaRole.Button, new() { Name = "Check API Status" }
 ### Test Structure
 
 #### Fixtures
-- `TestServerFixture` - Manages Kestrel server lifecycle
+- `TestServerFixture` - Manages test server lifecycle using Testcontainers
+- Uses the actual TestServer Docker container (not duplicated code)
 - Shared across all tests via xUnit collection fixtures
-- Server starts once per test run, disposed at end
+- Container starts once per test run, disposed at end
+
+#### Test Infrastructure
+The Playwright tests use **Testcontainers** to run the actual TestServer Docker container:
+- No duplication of server setup code - uses the same container as docker-test.yml workflow
+- Automatically builds and publishes container before tests via MSBuild target
+- Container lifecycle managed by Testcontainers (automatic cleanup)
+- Dynamic port mapping to avoid conflicts
+
+```csharp
+// TestServerFixture uses Testcontainers
+_container = new ContainerBuilder()
+    .WithImage("excos-lite-test-server:latest")
+    .WithPortBinding(8080, true)
+    .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Now listening on"))
+    .Build();
+```
 
 #### Test Organization
 ```csharp
