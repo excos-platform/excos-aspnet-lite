@@ -38,17 +38,6 @@ public class StaticFilesMiddlewareTests : IClassFixture<ExcosWebApplicationFacto
     }
 
     [Fact]
-    public async Task CssFile_ReturnsCorrectContentType()
-    {
-        // Act
-        var response = await _client.GetAsync("/excos/styles.css");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("text/css", response.Content.Headers.ContentType?.MediaType);
-    }
-
-    [Fact]
     public async Task JsFile_ReturnsCorrectContentType()
     {
         // Act
@@ -59,6 +48,19 @@ public class StaticFilesMiddlewareTests : IClassFixture<ExcosWebApplicationFacto
         // JavaScript can be served as application/javascript or text/javascript
         var contentType = response.Content.Headers.ContentType?.MediaType;
         Assert.True(contentType == "application/javascript" || contentType == "text/javascript");
+    }
+
+    [Fact]
+    public async Task SourceMapFile_ReturnsCorrectContentType()
+    {
+        // Act
+        var response = await _client.GetAsync("/excos/app.js.map");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Source maps can be served as application/json or text/plain
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        Assert.True(contentType == "application/json" || contentType == "text/plain");
     }
 
     [Fact]
