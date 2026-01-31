@@ -17,21 +17,14 @@
     <PackageReference Include="Yarn.MSBuild" Version="1.22.19" />
   </ItemGroup>
 
-  <!-- Include only index.html initially, app.js will be added after build -->
-  <ItemGroup>
-    <EmbeddedResource Include="wwwroot\index.html" />
-  </ItemGroup>
-
   <Target Name="BuildClientApp" BeforeTargets="AssignTargetPaths">
     <Exec Command="yarn install --frozen-lockfile" WorkingDirectory="ClientApp" />
     <Exec Command="yarn build" WorkingDirectory="ClientApp" />
     
-    <!-- Add the generated files to EmbeddedResource after they're created -->
+    <!-- Add all wwwroot files to EmbeddedResource after they're created -->
     <ItemGroup>
-      <EmbeddedResource Include="wwwroot\app.js" />
-      <!-- Only include source maps in Debug builds -->
-      <EmbeddedResource Include="wwwroot\app.js.map" Condition="'$(Configuration)' == 'Debug'" />
-      <EmbeddedResource Include="wwwroot\app.js.LICENSE.txt" Condition="Exists('wwwroot\app.js.LICENSE.txt')" />
+      <EmbeddedResource Include="wwwroot\**\*" Exclude="wwwroot\app.js.map" Condition="'$(Configuration)' != 'Debug'" />
+      <EmbeddedResource Include="wwwroot\**\*" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
   </Target>
 
