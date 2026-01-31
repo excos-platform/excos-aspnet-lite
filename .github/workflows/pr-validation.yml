@@ -23,6 +23,9 @@ jobs:
       with:
         dotnet-version: '10.0.x'
         
+    - name: Check formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+        
     - name: Restore dependencies
       run: dotnet restore
       
@@ -31,6 +34,3 @@ jobs:
       
     - name: Run tests
       run: dotnet test --no-build --configuration Release --verbosity normal
-      
-    - name: Check formatting
-      run: dotnet format --verify-no-changes --verbosity diagnostic
