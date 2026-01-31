@@ -2,7 +2,8 @@
   "$schema": "https://coolify.io/schemas/coolify.json",
   "name": "Excos.AspNetCore.Lite TestServer",
   "build": {
-    "build_pack": "nixpacks"
+    "build_pack": "dockercompose",
+    "docker_compose_location": ".coolify/docker-compose.yml"
   },
   "network": {
     "ports": [8080]
