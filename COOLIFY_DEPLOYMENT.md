@@ -21,7 +21,7 @@ The test server project (`Excos.AspNetCore.Lite.TestServer.csproj`) previously h
 <ContainerImageTag>latest</ContainerImageTag>
 ```
 
-These settings enable **.NET SDK's built-in container publishing** feature (available since .NET 8), which allows you to create Docker containers directly using:
+These settings enable **.NET SDK's built-in container publishing** feature (introduced in .NET 7, widely available since .NET 8), which allows you to create Docker containers directly using:
 
 ```bash
 dotnet publish -t:PublishContainer
