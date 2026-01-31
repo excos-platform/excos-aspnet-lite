@@ -84,3 +84,4 @@ yarn-error.log
 **/ClientApp/dist/
 **/wwwroot/app.js
 **/wwwroot/app.js.map
+**/wwwroot/app.js.LICENSE.txt

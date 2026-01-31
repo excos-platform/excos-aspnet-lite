@@ -22,9 +22,6 @@ public class ExcosPluginUITests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Install Playwright browsers if not already installed
-        Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
-
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {

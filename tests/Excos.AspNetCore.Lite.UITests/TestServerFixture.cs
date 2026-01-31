@@ -3,16 +3,20 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Playwright;
 
 namespace Excos.AspNetCore.Lite.UITests;
 
 /// <summary>
 /// Fixture for managing the test server lifecycle for UI tests.
 /// Uses a real Kestrel server so Playwright can connect to it.
+/// Also manages Playwright installation and initialization.
 /// </summary>
 public class TestServerFixture : IAsyncLifetime
 {
     private IHost? _host;
+    private static bool _playwrightInstalled = false;
+    private static readonly object _installLock = new object();
     
     /// <summary>
     /// Gets the base URL for the test server.
@@ -31,6 +35,16 @@ public class TestServerFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        // Install Playwright browsers if not already installed (only once per test run)
+        lock (_installLock)
+        {
+            if (!_playwrightInstalled)
+            {
+                Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
+                _playwrightInstalled = true;
+            }
+        }
+        
         // Use a fixed port to avoid issues
         var port = 5123; // Use a non-standard port to avoid conflicts
         BaseUrl = $"http://localhost:{port}";
