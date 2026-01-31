@@ -21,17 +21,10 @@ app.UseAuthorization();
 // Add a simple root endpoint
 app.MapGet("/", () => "Test server is running. Visit /excos to see the Excos plugin.");
 
-// Map the Excos plugin - returns API route group for further customization
+// Map the Excos plugin - returns API route group for applying policies
 var excosApi = app.MapExcos();
 
-// Example: Apply authorization to all plugin API endpoints (commented out for demo)
-// excosApi.RequireAuthorization();
-
-// Example: Add custom endpoint to the plugin API
-excosApi.MapGet("/custom", () => Results.Json(new { message = "Custom endpoint added by host" }));
-
-// Example: Add an authenticated endpoint
-excosApi.MapGet("/secure", () => Results.Json(new { message = "This endpoint requires authentication" }))
-    .RequireAuthorization();
+// Apply authorization to all plugin API endpoints
+excosApi.RequireAuthorization();
 
 app.Run();
