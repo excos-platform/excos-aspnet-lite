@@ -1,15 +1,23 @@
+# Nixpacks configuration for Coolify deployment
+# See COOLIFY_DEPLOYMENT.md for details on why we use nixpacks instead of .NET SDK container support
+
 [phases.setup]
+# Install .NET SDK 10 using Nix packages
 nixPkgs = ["dotnet-sdk_10"]
 
 [phases.build]
 cmds = [
   "dotnet restore",
+  # Note: We use standard 'dotnet publish' (NOT '-t:PublishContainer')
+  # Nixpacks builds the container itself, so .NET SDK container support is not used
   "dotnet publish src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj -c Release -o out --no-restore"
 ]
 
 [start]
+# Run the published DLL
 cmd = "dotnet out/Excos.AspNetCore.Lite.TestServer.dll"
 
 [variables]
+# Configure ASP.NET Core to listen on all interfaces (required for containers)
 ASPNETCORE_URLS = "http://0.0.0.0:8080"
 ASPNETCORE_ENVIRONMENT = "Production"
