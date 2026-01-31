@@ -18,9 +18,9 @@ public static class ExcosExtensions
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddExcos(
         this IServiceCollection services,
-        Action<ExcosOptions>? configure = null)
+        Action<ExcosLiteOptions>? configure = null)
     {
-        var options = new ExcosOptions();
+        var options = new ExcosLiteOptions();
         configure?.Invoke(options);
 
         services.AddSingleton(options);
@@ -36,35 +36,33 @@ public static class ExcosExtensions
     /// Maps Excos plugin endpoints including static files and API.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder.</param>
-    /// <param name="pathPrefix">The path prefix where the plugin will be mounted (e.g., "/excos"). If null, uses the configured PathPrefix from ExcosOptions.</param>
+    /// <param name="pathPrefix">The path prefix where the plugin will be mounted (default: "/excos").</param>
     /// <returns>A route group builder for the API endpoints, allowing the host to apply authorization or other policies.</returns>
     /// <remarks>
     /// This method maps both static file endpoints and API endpoints.
     /// The returned RouteGroupBuilder allows the host to apply policies like RequireAuthorization().
     /// </remarks>
-    public static RouteGroupBuilder MapExcos(this IEndpointRouteBuilder endpoints, string? pathPrefix = null)
+    public static RouteGroupBuilder MapExcos(this IEndpointRouteBuilder endpoints, string pathPrefix = "/excos")
     {
-        var options = endpoints.ServiceProvider.GetRequiredService<ExcosOptions>();
         var fileProvider = endpoints.ServiceProvider.GetRequiredService<IExcosFileProvider>();
         var contentTypeProvider = endpoints.ServiceProvider.GetRequiredService<IExcosContentTypeProvider>();
-        var prefix = pathPrefix ?? options.PathPrefix;
 
         // Map catch-all route for static files (non-API routes)
-        endpoints.MapGet($"{prefix}/{{**path}}", async (HttpContext context, string? path) =>
+        endpoints.MapGet($"{pathPrefix}/{{**path}}", async (HttpContext context, string? path) =>
         {
             // Skip API routes - they should not match this catch-all
             var requestPath = context.Request.Path.Value ?? string.Empty;
-            if (requestPath.StartsWith($"{prefix}{ExcosConstants.ApiRoutePrefix}", StringComparison.OrdinalIgnoreCase))
+            if (requestPath.StartsWith($"{pathPrefix}{ExcosConstants.ApiRoutePrefix}", StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = 404;
                 return;
             }
 
-            await ExcosStaticFilesHandler.HandleAsync(context, fileProvider, contentTypeProvider, prefix);
+            await ExcosStaticFilesHandler.HandleAsync(context, fileProvider, contentTypeProvider, pathPrefix);
         });
 
         // Create and return the API route group
-        var apiGroup = endpoints.MapGroup($"{prefix}{ExcosConstants.ApiRoutePrefix}");
+        var apiGroup = endpoints.MapGroup($"{pathPrefix}{ExcosConstants.ApiRoutePrefix}");
 
         // Map default status endpoint
         apiGroup.MapGet("/status", () => Results.Json(new { status = "running", version = "1.0.0" }));

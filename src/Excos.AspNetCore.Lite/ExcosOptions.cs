@@ -1,26 +1,9 @@
 namespace Excos.AspNetCore.Lite;
 
 /// <summary>
-/// Configuration options for the Excos plugin.
+/// Configuration options for the Excos Lite plugin.
 /// </summary>
-public class ExcosOptions
+public class ExcosLiteOptions
 {
-    private string _pathPrefix = "/excos";
-
-    /// <summary>
-    /// Gets or sets the path prefix where the plugin will be hosted.
-    /// Default is "/excos".
-    /// </summary>
-    public string PathPrefix
-    {
-        get => _pathPrefix;
-        set
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("PathPrefix cannot be null or empty", nameof(value));
-            if (!value.StartsWith("/"))
-                throw new ArgumentException("PathPrefix must start with '/'", nameof(value));
-            _pathPrefix = value.TrimEnd('/');
-        }
-    }
+    // Empty for now - reserved for future configuration options
 }

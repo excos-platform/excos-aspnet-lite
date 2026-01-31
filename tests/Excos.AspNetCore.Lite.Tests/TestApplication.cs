@@ -18,15 +18,12 @@ public class TestWebApplication
         var builder = WebApplication.CreateBuilder(args ?? Array.Empty<string>());
 
         // Add Excos services
-        builder.Services.AddExcos(options =>
-        {
-            options.PathPrefix = "/excos";
-        });
+        builder.Services.AddExcos();
 
         var app = builder.Build();
 
-        // Map the Excos plugin
-        var api = app.MapExcos();
+        // Map the Excos plugin at /excos
+        var api = app.MapExcos("/excos");
 
         return app;
     }
