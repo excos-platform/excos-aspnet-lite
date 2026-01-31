@@ -116,6 +116,34 @@ All pull requests must pass:
 1. **Build** - `dotnet build` must succeed with no errors
 2. **Tests** - All tests must pass with `dotnet test`
 3. **Formatting** - Code must be properly formatted per `.editorconfig`
+4. **Security** - CodeQL security scan must pass with no vulnerabilities
+
+## Security
+
+### CodeQL Security Scanning
+- **Always run CodeQL security scans** before finalizing your changes
+- CodeQL checks for common vulnerabilities and coding errors in C# and GitHub Actions workflows
+- The scan must be run after code changes are complete and before requesting code review
+- Address all discovered vulnerabilities - fix them or document why they're false positives
+- Re-run the scan after making fixes to verify issues are resolved
+
+### Running Security Scans
+Security scans are integrated into the development workflow and will automatically detect:
+- SQL injection vulnerabilities
+- Cross-site scripting (XSS) issues
+- Path traversal vulnerabilities
+- Insecure deserialization
+- Use of weak cryptographic algorithms
+- Other common security issues in C# code
+- Security issues in GitHub Actions workflows
+
+### Security Best Practices
+- Never commit secrets or sensitive data to the repository
+- Use parameterized queries or ORMs to prevent SQL injection
+- Validate and sanitize all user inputs
+- Use secure defaults for cryptographic operations
+- Keep dependencies up to date to avoid known vulnerabilities
+- Follow the principle of least privilege when configuring permissions
 
 ## Specific Code Patterns
 
@@ -148,3 +176,4 @@ When in doubt:
 - Keep the public API minimal and well-designed
 - Favor endpoint routing for new functionality
 - Write tests to verify your changes work correctly
+- Run security scans before finalizing your work
