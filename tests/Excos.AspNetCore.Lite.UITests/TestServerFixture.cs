@@ -18,6 +18,18 @@ public class TestServerFixture : IAsyncLifetime
     private static bool _playwrightInstalled = false;
     private static readonly object _installLock = new object();
 
+    private static void EnsurePlaywrightInstalled()
+    {
+        lock (_installLock)
+        {
+            if (!_playwrightInstalled)
+            {
+                Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
+                _playwrightInstalled = true;
+            }
+        }
+    }
+
     /// <summary>
     /// Gets the base URL for the test server.
     /// </summary>
@@ -36,14 +48,7 @@ public class TestServerFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Install Playwright browsers if not already installed (only once per test run)
-        lock (_installLock)
-        {
-            if (!_playwrightInstalled)
-            {
-                Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
-                _playwrightInstalled = true;
-            }
-        }
+        EnsurePlaywrightInstalled();
 
         // Use a fixed port to avoid issues
         var port = 5123; // Use a non-standard port to avoid conflicts
