@@ -37,18 +37,21 @@ public static class ExcosExtensions
     /// </summary>
     /// <param name="endpoints">The endpoint route builder.</param>
     /// <param name="pathPrefix">The path prefix where the plugin will be mounted (default: "/excos").</param>
-    /// <returns>A route group builder for the API endpoints, allowing the host to apply authorization or other policies.</returns>
+    /// <returns>A route group builder for all plugin endpoints, allowing the host to apply authorization or other policies.</returns>
     /// <remarks>
-    /// This method maps both static file endpoints and API endpoints.
-    /// The returned RouteGroupBuilder allows the host to apply policies like RequireAuthorization().
+    /// This method maps both static file endpoints and API endpoints within a route group.
+    /// The returned RouteGroupBuilder allows the host to apply policies like RequireAuthorization() to all plugin endpoints.
     /// </remarks>
     public static RouteGroupBuilder MapExcos(this IEndpointRouteBuilder endpoints, string pathPrefix = "/excos")
     {
         var fileProvider = endpoints.ServiceProvider.GetRequiredService<IExcosFileProvider>();
         var contentTypeProvider = endpoints.ServiceProvider.GetRequiredService<IExcosContentTypeProvider>();
 
-        // Map catch-all route for static files (non-API routes)
-        endpoints.MapGet($"{pathPrefix}/{{**path}}", async (HttpContext context, string? path) =>
+        // Create a route group for the entire plugin
+        var pluginGroup = endpoints.MapGroup(pathPrefix);
+
+        // Map catch-all route for static files (non-API routes) within the plugin group
+        pluginGroup.MapGet("/{**path}", async (HttpContext context, string? path) =>
         {
             // Skip API routes - they should not match this catch-all
             var requestPath = context.Request.Path.Value ?? string.Empty;
@@ -61,12 +64,13 @@ public static class ExcosExtensions
             await ExcosStaticFilesHandler.HandleAsync(context, fileProvider, contentTypeProvider, pathPrefix);
         });
 
-        // Create and return the API route group
-        var apiGroup = endpoints.MapGroup($"{pathPrefix}{ExcosConstants.ApiRoutePrefix}");
+        // Create API sub-group within the plugin group
+        var apiGroup = pluginGroup.MapGroup(ExcosConstants.ApiRoutePrefix);
 
         // Map default status endpoint
         apiGroup.MapGet("/status", () => Results.Json(new { status = "running", version = "1.0.0" }));
 
-        return apiGroup;
+        // Return the parent group so policies apply to all endpoints
+        return pluginGroup;
     }
 }
