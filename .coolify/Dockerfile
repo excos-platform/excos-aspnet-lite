@@ -20,8 +20,6 @@ COPY Excos.AspNetCore.Lite.slnx ./
 # Copy project files - Docker doesn't support ** globbing, so we copy explicitly
 COPY src/Excos.AspNetCore.Lite/Excos.AspNetCore.Lite.csproj src/Excos.AspNetCore.Lite/
 COPY src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj src/Excos.AspNetCore.Lite.TestServer/
-COPY tests/Excos.AspNetCore.Lite.Tests/Excos.AspNetCore.Lite.Tests.csproj tests/Excos.AspNetCore.Lite.Tests/
-COPY tests/Excos.AspNetCore.Lite.UITests/Excos.AspNetCore.Lite.UITests.csproj tests/Excos.AspNetCore.Lite.UITests/
 
 # Copy frontend package files for yarn install during MSBuild
 COPY src/Excos.AspNetCore.Lite/ClientApp/package.json src/Excos.AspNetCore.Lite/ClientApp/
@@ -30,9 +28,8 @@ COPY src/Excos.AspNetCore.Lite/ClientApp/yarn.lock src/Excos.AspNetCore.Lite/Cli
 # Restore dependencies (cached unless project files change)
 RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj
 
-# Copy remaining source code
+# Copy remaining source code (only src, not tests)
 COPY src/ ./src/
-COPY tests/ ./tests/
 
 # Build and publish the application
 # MSBuild will automatically run the BuildClientApp target which installs yarn deps and builds frontend
