@@ -47,10 +47,11 @@ public class TestServerFixture : IAsyncLifetime
         // Install Playwright browsers if not already installed (only once per test run)
         EnsurePlaywrightInstalled();
 
-        // Build and start the TestServer container
+        // Build and start the TestServer container with auth disabled for testing
         _container = new ContainerBuilder()
             .WithImage("excos-lite-test-server:latest")
             .WithPortBinding(8080, true)
+            .WithEnvironment("DisableAuth", "true")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Now listening on"))
             .Build();
 
