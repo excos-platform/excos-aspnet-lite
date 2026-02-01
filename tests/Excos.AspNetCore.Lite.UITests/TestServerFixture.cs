@@ -32,6 +32,16 @@ public class TestServerFixture : IAsyncLifetime
     /// </summary>
     public string BaseUrl { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the username for basic authentication.
+    /// </summary>
+    public string Username => "user";
+
+    /// <summary>
+    /// Gets the password for basic authentication.
+    /// </summary>
+    public string Password => "password";
+
     public async Task InitializeAsync()
     {
         // Install Playwright browsers if not already installed (only once per test run)
