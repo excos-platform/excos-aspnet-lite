@@ -5,18 +5,24 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Install Node.js and yarn for frontend build (required by MSBuild target)
+# Install npm separately as Ubuntu's nodejs package doesn't include it
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y curl gnupg && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y nodejs npm && \
     npm install -g yarn && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy solution file and project files for restore (better layer caching)
 COPY Excos.AspNetCore.Lite.slnx ./
-COPY src/**/*.csproj src/
-COPY tests/**/*.csproj tests/
+
+# Copy project files - Docker doesn't support ** globbing, so we copy explicitly
+COPY src/Excos.AspNetCore.Lite/Excos.AspNetCore.Lite.csproj src/Excos.AspNetCore.Lite/
+COPY src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj src/Excos.AspNetCore.Lite.TestServer/
+COPY tests/Excos.AspNetCore.Lite.Tests/Excos.AspNetCore.Lite.Tests.csproj tests/Excos.AspNetCore.Lite.Tests/
+COPY tests/Excos.AspNetCore.Lite.UITests/Excos.AspNetCore.Lite.UITests.csproj tests/Excos.AspNetCore.Lite.UITests/
+
 # Copy frontend package files for yarn install during MSBuild
 COPY src/Excos.AspNetCore.Lite/ClientApp/package.json src/Excos.AspNetCore.Lite/ClientApp/
 COPY src/Excos.AspNetCore.Lite/ClientApp/yarn.lock src/Excos.AspNetCore.Lite/ClientApp/
