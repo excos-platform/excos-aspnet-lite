@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using Excos.AspNetCore.Lite.TestServer.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
 
 namespace Excos.AspNetCore.Lite.TestServer;
 
