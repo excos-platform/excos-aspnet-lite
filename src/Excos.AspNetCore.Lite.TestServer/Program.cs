@@ -17,11 +17,20 @@ if (!disableAuth)
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>
         {
-            options.LoginPath = "/login";
             options.Cookie.Name = "ExcosAuth";
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Strict;
             options.ExpireTimeSpan = TimeSpan.FromHours(24);
+            options.Events = new CookieAuthenticationEvents
+            {
+                OnRedirectToLogin = context =>
+                {
+                    // Don't redirect - just return 401
+                    // The React SPA will handle showing the login page
+                    context.Response.StatusCode = 401;
+                    return Task.CompletedTask;
+                }
+            };
         });
     builder.Services.AddAuthorization();
 }
@@ -67,6 +76,12 @@ app.MapPost("/api/logout", async (HttpContext context) =>
 // Check auth status endpoint
 app.MapGet("/api/auth/status", (HttpContext context) =>
 {
+    // If auth is disabled, always return authenticated
+    if (disableAuth)
+    {
+        return Results.Ok(new { isAuthenticated = true, username = (string?)null });
+    }
+    
     var isAuthenticated = context.User?.Identity?.IsAuthenticated ?? false;
     return Results.Ok(new { isAuthenticated, username = context.User?.Identity?.Name });
 });
@@ -74,11 +89,11 @@ app.MapGet("/api/auth/status", (HttpContext context) =>
 // Map the Excos plugin at /excos - returns API route group for applying policies
 var excosApi = app.MapExcos("/excos");
 
-// Apply authorization to all plugin API endpoints (unless disabled)
-if (!disableAuth)
-{
-    excosApi.RequireAuthorization();
-}
+// For cookie authentication with SPA, we cannot apply RequireAuthorization to the entire group
+// because static files need to be accessible for the login page to load.
+// The React app handles authentication client-side by checking /api/auth/status
+// and displaying the login form when not authenticated.
+// API endpoints return 401 when accessed without auth, which the React app handles.
 
 app.Run();
 
