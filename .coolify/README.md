@@ -13,14 +13,14 @@ The Dockerfile uses a simplified 2-stage build that leverages MSBuild's integrat
 
 1. **Build Stage** (.NET SDK 10.0 + Node.js 20)
    - Installs Node.js and yarn into the .NET SDK image
-   - Copies all source files (src/ and tests/)
+   - Copies source files (src/ only, tests excluded)
    - Restores NuGet packages
    - Runs `dotnet publish` which triggers MSBuild's `BuildClientApp` target
    - The MSBuild target automatically runs `yarn install` and `yarn build`
    - Publishes the complete application
 
-2. **Runtime Stage** (.NET ASP.NET 10.0)
-   - Minimal runtime image
+2. **Runtime Stage** (.NET ASP.NET 10.0 Alpine)
+   - Minimal Alpine-based runtime image (~121MB vs 230MB with standard image)
    - Copies published application
    - Runs the application on port 8080
 
@@ -32,7 +32,8 @@ This simplified approach:
 - Installs Node.js into the SDK image once
 - Lets MSBuild handle the frontend build automatically
 - Reduces complexity and potential sync issues
-- Resilient to new projects being added (copies entire src/ and tests/ directories)
+- Uses Alpine runtime for minimal image size (121MB)
+- Test projects excluded from the build (not needed at runtime)
 
 ## Environment Variables
 

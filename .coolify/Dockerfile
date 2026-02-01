@@ -38,8 +38,8 @@ RUN dotnet publish src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.Te
     -o /app/publish \
     --no-restore
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# Runtime image - using Alpine variant for minimal size (~100MB vs 230MB)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
 # Copy published application
