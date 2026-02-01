@@ -10,7 +10,4 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     restart: unless-stopped

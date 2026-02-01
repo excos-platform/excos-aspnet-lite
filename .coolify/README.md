@@ -13,10 +13,12 @@ The Dockerfile uses a simplified 2-stage build that leverages MSBuild's integrat
 
 1. **Build Stage** (.NET SDK 10.0 + Node.js 20)
    - Installs Node.js and yarn into the .NET SDK image
-   - Copies source files (src/ only, tests excluded)
-   - Restores NuGet packages
+   - Copies project files and restores NuGet packages
+   - **Copies package.json/yarn.lock and runs yarn install in separate layer**
+   - Copies remaining source files (src/ only, tests excluded)
    - Runs `dotnet publish` which triggers MSBuild's `BuildClientApp` target
-   - The MSBuild target automatically runs `yarn install` and `yarn build`
+   - MSBuild's yarn install runs quickly (node_modules already exists)
+   - MSBuild runs `yarn build` to compile frontend
    - Publishes the complete application
 
 2. **Runtime Stage** (.NET ASP.NET 10.0 Alpine)
@@ -30,33 +32,17 @@ Previously, we tried a 3-stage build with separate Node.js and .NET stages. Howe
 
 This simplified approach:
 - Installs Node.js into the SDK image once
+- Pre-installs yarn dependencies in a cached Docker layer (before source copy)
 - Lets MSBuild handle the frontend build automatically
 - Reduces complexity and potential sync issues
 - Uses Alpine runtime for minimal image size (121MB)
 - Test projects excluded from the build (not needed at runtime)
+- More resilient to network issues (yarn dependencies installed early)
 
 ## Environment Variables
 
 - `ASPNETCORE_URLS=http://+:8080` - Listen on all interfaces, port 8080
 - `ASPNETCORE_ENVIRONMENT=Production` - Production environment
-
-## DNS Configuration
-
-The yarn install command includes `--network-timeout 100000` flag for resilience against temporary network issues and DNS resolution delays.
-
-**Important**: If you encounter DNS errors during build (e.g., `getaddrinfo EAI_AGAIN registry.yarnpkg.com`), you may need to configure DNS at the Docker daemon level or pass DNS flags during build:
-
-```bash
-# Option 1: Build with explicit DNS
-docker build --dns 8.8.8.8 --dns 8.8.4.4 -f .coolify/Dockerfile -t myapp .
-
-# Option 2: Configure Docker daemon (add to /etc/docker/daemon.json)
-{
-  "dns": ["8.8.8.8", "8.8.4.4"]
-}
-```
-
-The dns configuration in docker-compose.yml only affects runtime, not the build phase. For Coolify, check if your instance allows configuring build-time DNS or contact your Coolify administrator.
 
 ## Deployment
 

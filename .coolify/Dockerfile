@@ -28,9 +28,11 @@ COPY Excos.AspNetCore.Lite.slnx ./
 COPY src/Excos.AspNetCore.Lite/Excos.AspNetCore.Lite.csproj src/Excos.AspNetCore.Lite/
 COPY src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj src/Excos.AspNetCore.Lite.TestServer/
 
-# Copy frontend package files for yarn install during MSBuild
+# Copy frontend package files and install dependencies BEFORE copying source
+# This allows yarn install to run in its own Docker layer and be cached
 COPY src/Excos.AspNetCore.Lite/ClientApp/package.json src/Excos.AspNetCore.Lite/ClientApp/
 COPY src/Excos.AspNetCore.Lite/ClientApp/yarn.lock src/Excos.AspNetCore.Lite/ClientApp/
+RUN cd src/Excos.AspNetCore.Lite/ClientApp && yarn install --frozen-lockfile
 
 # Restore dependencies (cached unless project files change)
 RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj
@@ -39,7 +41,7 @@ RUN dotnet restore src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.Te
 COPY src/ ./src/
 
 # Build and publish the application
-# MSBuild will automatically run the BuildClientApp target which installs yarn deps and builds frontend
+# MSBuild will run the BuildClientApp target, but yarn install will be fast (node_modules exists)
 RUN dotnet publish src/Excos.AspNetCore.Lite.TestServer/Excos.AspNetCore.Lite.TestServer.csproj \
     -c Release \
     -o /app/publish \
