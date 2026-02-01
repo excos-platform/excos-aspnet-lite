@@ -32,25 +32,16 @@ public class TestServerFixture : IAsyncLifetime
     /// </summary>
     public string BaseUrl { get; private set; } = string.Empty;
 
-    /// <summary>
-    /// Gets the username for basic authentication.
-    /// </summary>
-    public string Username => "user";
-
-    /// <summary>
-    /// Gets the password for basic authentication.
-    /// </summary>
-    public string Password => "password";
-
     public async Task InitializeAsync()
     {
         // Install Playwright browsers if not already installed (only once per test run)
         EnsurePlaywrightInstalled();
 
-        // Build and start the TestServer container
+        // Build and start the TestServer container with auth disabled for testing
         _container = new ContainerBuilder()
             .WithImage("excos-lite-test-server:latest")
             .WithPortBinding(8080, true)
+            .WithEnvironment("DisableAuth", "true")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Now listening on"))
             .Build();
 

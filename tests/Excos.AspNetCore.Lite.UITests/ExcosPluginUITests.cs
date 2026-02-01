@@ -28,17 +28,8 @@ public class ExcosPluginUITests : IAsyncLifetime
             Headless = true
         });
 
-        // Create context with basic auth headers
-        var authHeader = Convert.ToBase64String(
-            System.Text.Encoding.UTF8.GetBytes($"{_fixture.Username}:{_fixture.Password}"));
-
-        _context = await _browser.NewContextAsync(new BrowserNewContextOptions
-        {
-            ExtraHTTPHeaders = new Dictionary<string, string>
-            {
-                ["Authorization"] = $"Basic {authHeader}"
-            }
-        });
+        // Create context without authentication (auth is disabled in test environment)
+        _context = await _browser.NewContextAsync();
 
         _page = await _context.NewPageAsync();
     }
