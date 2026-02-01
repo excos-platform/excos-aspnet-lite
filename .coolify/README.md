@@ -44,6 +44,27 @@ This simplified approach:
 - `ASPNETCORE_URLS=http://+:8080` - Listen on all interfaces, port 8080
 - `ASPNETCORE_ENVIRONMENT=Production` - Production environment
 
+## Troubleshooting
+
+### Yarn DNS Errors (getaddrinfo EAI_AGAIN)
+
+If you encounter `getaddrinfo EAI_AGAIN registry.yarnpkg.com` errors during Docker build, this is usually caused by IPv6 DNS resolution issues. 
+
+**Solution**: The Dockerfile includes `ENV NODE_OPTIONS=--dns-result-order=ipv4first` which forces Node.js to prefer IPv4 for DNS lookups.
+
+If the issue persists:
+- Check Docker daemon DNS configuration on your Coolify host
+- Verify network connectivity from build containers
+- Consider using a DNS server that supports both IPv4 and IPv6
+
+### Port Already in Use
+
+The docker-compose.yml does not expose ports to the host, expecting you to use a reverse proxy (like Coolify's built-in proxy). If you need direct access, add:
+```yaml
+ports:
+  - "8080:8080"
+```
+
 ## Deployment
 
 Configure Coolify manually to use the docker-compose file in this directory.

@@ -7,6 +7,8 @@ WORKDIR /app
 # Install Node.js and yarn for frontend build (required by MSBuild target)
 # Download Node.js 20 LTS binary directly from official source
 ENV NODE_VERSION=20.18.1
+# Fix for IPv6 DNS issues - force Node.js to prefer IPv4 for DNS resolution
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 RUN apt-get update && \
     apt-get install -y curl xz-utils && \
     curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz && \
