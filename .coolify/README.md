@@ -40,6 +40,12 @@ This simplified approach:
 - `ASPNETCORE_URLS=http://+:8080` - Listen on all interfaces, port 8080
 - `ASPNETCORE_ENVIRONMENT=Production` - Production environment
 
+## DNS Configuration
+
+The docker-compose.yml includes DNS servers (8.8.8.8, 8.8.4.4) to prevent DNS resolution failures during build. The yarn install command also includes `--network-timeout 100000` flag for resilience against temporary network issues.
+
+If you encounter DNS errors during build, ensure your Coolify/Docker host has proper DNS configuration or network connectivity.
+
 ## Deployment
 
 Configure Coolify manually to use the docker-compose file in this directory.
