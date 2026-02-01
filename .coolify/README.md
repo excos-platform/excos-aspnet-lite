@@ -42,9 +42,21 @@ This simplified approach:
 
 ## DNS Configuration
 
-The docker-compose.yml includes DNS servers (8.8.8.8, 8.8.4.4) to prevent DNS resolution failures during build. The yarn install command also includes `--network-timeout 100000` flag for resilience against temporary network issues.
+The yarn install command includes `--network-timeout 100000` flag for resilience against temporary network issues and DNS resolution delays.
 
-If you encounter DNS errors during build, ensure your Coolify/Docker host has proper DNS configuration or network connectivity.
+**Important**: If you encounter DNS errors during build (e.g., `getaddrinfo EAI_AGAIN registry.yarnpkg.com`), you may need to configure DNS at the Docker daemon level or pass DNS flags during build:
+
+```bash
+# Option 1: Build with explicit DNS
+docker build --dns 8.8.8.8 --dns 8.8.4.4 -f .coolify/Dockerfile -t myapp .
+
+# Option 2: Configure Docker daemon (add to /etc/docker/daemon.json)
+{
+  "dns": ["8.8.8.8", "8.8.4.4"]
+}
+```
+
+The dns configuration in docker-compose.yml only affects runtime, not the build phase. For Coolify, check if your instance allows configuring build-time DNS or contact your Coolify administrator.
 
 ## Deployment
 

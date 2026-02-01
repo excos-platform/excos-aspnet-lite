@@ -3,8 +3,8 @@
 
 set -e
 
-echo "=== Building Docker image ==="
-docker build -f .coolify/Dockerfile -t excos-coolify-test ..
+echo "=== Building Docker image (with DNS servers for resilience) ==="
+docker build --dns 8.8.8.8 --dns 8.8.4.4 -f .coolify/Dockerfile -t excos-coolify-test ..
 
 echo ""
 echo "=== Checking image size ==="
