@@ -5,12 +5,19 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Install Node.js and yarn for frontend build (required by MSBuild target)
-# Install npm separately as Ubuntu's nodejs package doesn't include it
+# Download Node.js 20 LTS binary directly from official source
+ENV NODE_VERSION=20.18.1
 RUN apt-get update && \
-    apt-get install -y curl gnupg && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs npm && \
+    apt-get install -y curl xz-utils && \
+    curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz && \
+    mkdir -p /usr/local/lib/nodejs && \
+    tar -xJf /tmp/node.tar.xz -C /usr/local/lib/nodejs && \
+    rm /tmp/node.tar.xz && \
+    ln -s /usr/local/lib/nodejs/node-v${NODE_VERSION}-linux-x64/bin/node /usr/local/bin/node && \
+    ln -s /usr/local/lib/nodejs/node-v${NODE_VERSION}-linux-x64/bin/npm /usr/local/bin/npm && \
+    ln -s /usr/local/lib/nodejs/node-v${NODE_VERSION}-linux-x64/bin/npx /usr/local/bin/npx && \
     npm install -g yarn && \
+    ln -s /usr/local/lib/nodejs/node-v${NODE_VERSION}-linux-x64/bin/yarn /usr/local/bin/yarn && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
