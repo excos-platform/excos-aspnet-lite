@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .coolify/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
